@@ -1,10 +1,6 @@
-import os
-from dual.db import Beets
+# Dual helps users rate their beets library by presenting pairs of songs and
+# asking  which one they like better
 
-
-def main():
-    db = Beets(os.getenv('XDG_CONFIG_HOME') + '/beets/library.db')
-
-    tracks = db.unscored_tracks()
-    for row in tracks:
-        print(row)
+from .audio import MpvClient
+from .audio.player import Player
+from .db import Beets
