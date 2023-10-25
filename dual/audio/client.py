@@ -21,28 +21,24 @@ def pid_from_socket_path(socket_path):
 
 
 def get_mpv_socket(redis_client):
-    process = None
-    socket_path = redis_client.get('mpv-socket/current')
+    process = subprocess.Popen([
+        'mpv',
+        '--idle=yes',
+        '--no-terminal',
+        '--profile=music',
+    ])
 
-    if socket_path is not None:
-        pid = pid_from_socket_path(socket_path)
-        if not pid_is_running(pid):
-            socket_path = None
-            redis_client.delete('mpv-socket/current')
-
-    if socket_path is None:
-        process = subprocess.Popen([
-            'mpv',
-            '--idle=yes',
-            '--no-terminal',
-            '--profile=music',
-        ])
-
+    socket_path = None
     num_tries = 0
     while socket_path is None and num_tries < 10:
-        socket_path = redis_client.get(
+        current = redis_client.get(
             'mpv-socket/current')
-        time.sleep(0.1)
+        if (
+            current is not None and current.decode(
+                'utf-8').endswith(str(process.pid))
+        ):
+            socket_path = current
+        time.sleep(0.2)
         num_tries += 1
 
     if socket_path is None:
@@ -62,8 +58,7 @@ class MpvClient:
         self.process = process
 
     def kill(self):
-        if self.process is not None:
-            self.process.kill()
+        self._command({'command': ['quit', '0']})
 
     def _send(self, command):
         with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:

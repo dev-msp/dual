@@ -121,7 +121,7 @@ def main():
     loop = urwid.MainLoop(fill, palette, unhandled_input=exit_on_q)
     loop.screen.set_terminal_properties(colors=256)
     loop.run()
-    app.mpv.process.kill()
+    app.mpv.kill()
 
 
 if __name__ == '__main__':
