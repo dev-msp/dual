@@ -3,7 +3,6 @@
 
 import urwid
 from dual.app import App, UserResponse
-import random
 
 
 class Referent(urwid.WidgetWrap):
@@ -27,10 +26,6 @@ class TrackView(Referent):
         if track.last_rated_at():
             for_pile.append(urwid.Text(track.last_rated_at().strftime(
                 '%Y-%m-%d %H:%M:%S')))
-        # append a random number using stdlib
-        for_pile.append(urwid.Text(
-            f"Random: {random.randint(0, 1000000)}"
-        ))
         super().__init__(
             urwid.Pile(for_pile)
         )

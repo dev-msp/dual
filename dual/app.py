@@ -44,6 +44,7 @@ class App:
             self._wins = 0
             self._winner = None
 
+        track.reload(self.db)
         if self._winner is not None and track.id() == self._winner.id():
             if self._wins >= self.max_consecutive_wins:
                 self._wins = 0
@@ -54,13 +55,14 @@ class App:
         else:
             # reset the streak if the winner is different
             self._wins = 1
+            track.reload(self.db)
             self._winner = track
 
     @winner.deleter
     def winner(self):
         """Delete the winner of the last question"""
         self._wins = 0
-        del self._winner
+        self._winner = None
 
     def get_elimination_pair(self) -> tuple[Track, Track]:
         pair = [self.winner] if self.winner else []
@@ -100,11 +102,6 @@ class App:
             UserResponse.draw: 0.5
         }[user_response]
 
-        if user_response == UserResponse.win:
-            self.winner = song1
-        elif user_response == UserResponse.lose:
-            self.winner = song2
-
         song1_score, song2_score = new_score(
             song1.score(),
             song2.score(),
@@ -113,6 +110,11 @@ class App:
 
         self.db.update_score(song1, song1_score)
         self.db.update_score(song2, song2_score)
+
+        if user_response == UserResponse.win:
+            self.winner = song1
+        elif user_response == UserResponse.lose:
+            self.winner = song2
 
     def _supplement_pair(
         self,

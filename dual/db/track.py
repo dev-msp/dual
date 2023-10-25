@@ -24,6 +24,9 @@ class Track:
             raise KeyError(f"Key {key} not found in {self.row.keys()}")
         return self.row[key]
 
+    def reload(self, db):
+        self.row = db.get_track_by_id(self.id()).row
+
     def id(self):
         return self.row['id']
 
