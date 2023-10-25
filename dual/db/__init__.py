@@ -20,7 +20,11 @@ class Beets:
     def get_track_by_id(self, id):
         """Get a track by its id"""
         query = """
-            SELECT items.*, CAST(scores.value AS REAL) AS score FROM items
+            SELECT
+                items.*,
+                CAST(COALESCE(scores.value, '0') AS REAL) AS score,
+                CAST(last_rated_at.value AS INTEGER) AS last_rated_at
+            FROM items
             LEFT JOIN item_attributes as scores ON (
                 items.id = scores.entity_id
                 AND scores.key='score'
@@ -37,7 +41,11 @@ class Beets:
     def get_track_by_path(self, path):
         """Get a track by its path"""
         query = """
-            SELECT items.*, CAST(scores.value AS REAL) AS score FROM items
+            SELECT
+                items.*,
+                CAST(COALESCE(scores.value, '0') AS REAL) AS score,
+                CAST(last_rated_at.value AS INTEGER) AS last_rated_at
+            from items
             LEFT JOIN item_attributes as scores ON (
                 items.id = scores.entity_id
                 AND scores.key='score'
@@ -61,23 +69,25 @@ class Beets:
     ):
         """Return all tracks"""
         query = """
-            SELECT items.*, CAST(scores.value AS REAL) AS score,
+            SELECT
+                items.*,
+                CAST(COALESCE(scores.value, '0') AS REAL) AS score,
                 CAST(last_rated_at.value AS INTEGER) AS last_rated_at
             FROM items
-            JOIN item_attributes as scores ON (
+            LEFT JOIN item_attributes as scores ON (
                 items.id = scores.entity_id
                 AND scores.key='score'
-                -- convert to float
-                AND CAST(scores.value AS REAL) BETWEEN ? AND ?
             )
             LEFT JOIN item_attributes AS last_rated_at ON (
                 items.id = last_rated_at.entity_id
                 AND last_rated_at.key='last_rated_at'
-                AND (
-                    last_rated_at.value IS NULL
-                    OR CAST(last_rated_at.value AS INTEGER)
-                        < strftime('%s', 'now', '-{} seconds'))
-                )
+            )
+
+            WHERE score BETWEEN ? AND ?
+            AND (
+                last_rated_at IS 0
+                OR last_rated_at < strftime('%s', 'now', '-{} seconds')
+            )
             ORDER BY {}
             LIMIT ?
         """.format(not_rated_in_last, order_by)
