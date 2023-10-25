@@ -41,7 +41,7 @@ class App:
         self.mpv = MpvClient()
         self.player = Player(self.db, self.mpv)
         self.rounds = RoundFilter()
-        self.max_consecutive_wins = 10
+        self.max_consecutive_wins = 5
         self._wins = 0
         self._winner = None
 
