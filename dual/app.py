@@ -2,6 +2,7 @@ import os
 from random import sample
 from enum import Enum
 
+from dual.bloom import BloomFilter
 from dual.db import Beets, Track
 from dual.audio import MpvClient
 from dual.audio.player import Player
@@ -15,6 +16,23 @@ class UserResponse(Enum):
     draw = 'draw'
 
 
+class RoundFilter(BloomFilter):
+    """A bloom filter that keeps track of the rounds"""
+
+    def __init__(self):
+        super().__init__(int(77e3), 13)
+
+    def _as_string(self, ta: Track, tb: Track):
+        aid, bid = sorted([ta.id(), tb.id()])
+        return f'{aid}-{bid}'
+
+    def add(self, ta: Track, tb: Track):
+        super().add(self._as_string(ta, tb))
+
+    def possibly_contains(self, ta: Track, tb: Track):
+        return super().possibly_contains(self._as_string(ta, tb))
+
+
 class App:
     """The Dual app"""
 
@@ -22,6 +40,7 @@ class App:
         self.db = Beets(os.getenv('XDG_CONFIG_HOME') + '/beets/library.db')
         self.mpv = MpvClient()
         self.player = Player(self.db, self.mpv)
+        self.rounds = RoundFilter()
         self.max_consecutive_wins = 10
         self._wins = 0
         self._winner = None
@@ -64,9 +83,27 @@ class App:
         self._wins = 0
         self._winner = None
 
-    def get_elimination_pair(self) -> tuple[Track, Track]:
+    def get_elimination_pair(self, tries_left=3) -> tuple[Track, Track]:
+        if tries_left == 0:
+            if self.winner is None:
+                raise ValueError('Could not find a valid pair of songs')
+            del self.winner
+
         pair = [self.winner] if self.winner else []
-        return self._supplement_pair(pair, not_rated_in_last=3600)
+        p = self._supplement_pair(
+            pair,
+            not_rated_in_last=3600,
+            order_by='score DESC'
+        )
+
+        if self.rounds.possibly_contains(*p):
+            return self.get_elimination_pair(tries_left - 1)
+
+        if p[0].id() == p[1].id():
+            del self.winner
+            return self.get_elimination_pair(tries_left - 1)
+
+        return p
 
     def get_next_pair(self) -> tuple[Track, Track]:
         """Get the next pair of songs to rate
@@ -96,6 +133,8 @@ class App:
             song2 (Track): song2
             user_response (str): the outcome for song 1
         """
+
+        self.rounds.add(song1, song2)
         score_from_response = {
             UserResponse.win: 1,
             UserResponse.lose: 0,
@@ -125,9 +164,9 @@ class App:
         if len(pair) > 2:
             raise ValueError('Pair must have at most 2 elements')
         for n in range(2 - len(pair)):
-            random_track = self.db.tracks(
+            random_track = sample(self.db.tracks(
                 **kwargs,
-                limit=1
-            )[0]
+                limit=200
+            ), 1)[0]
             pair.append(random_track)
         return tuple(pair)

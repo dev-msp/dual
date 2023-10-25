@@ -13,6 +13,8 @@ authors = [
 dependencies = [
   "urwid",
   "redis",
+  "mmh3",
+  "bitarray"
 ]
 
 [project.optional-dependencies]
