@@ -3,6 +3,7 @@
 
 import urwid
 from dual.app import App, UserResponse
+from dual.audio import LoadfileOption
 
 
 class Referent(urwid.WidgetWrap):
@@ -65,12 +66,23 @@ class QuestionSequence(urwid.WidgetWrap):
         return True
 
     def new_question(self):
-        track_a, track_b = self.app.get_elimination_pair()
-        self.app.player.enqueue_tracks([track_a, track_b], replace=True)
+        a, b = self.app.get_elimination_pair()
+        winner_id = self.app.winner.id() if self.app.winner else None
+
+        cur_playing = self.app.player.get_current_track()
+        if cur_playing and cur_playing.id() == winner_id:
+            mode = LoadfileOption.append_play
+        else:
+            mode = LoadfileOption.replace
+
+        self.app.player.enqueue_tracks(
+            [t for t in [a, b] if t.id() != winner_id],
+            mode=mode
+        )
 
         self.comparison = Comparison(
-            TrackView(track_a),
-            TrackView(track_b)
+            TrackView(a),
+            TrackView(b)
         )
         self._w = Question(self.comparison)
 

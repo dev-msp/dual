@@ -1,5 +1,5 @@
 from dual.db import Beets, Track
-from dual.audio import MpvClient
+from dual.audio import MpvClient, LoadfileOption
 
 
 class Player:
@@ -14,14 +14,18 @@ class Player:
     def enqueue_tracks(
         self,
         tracks: list[Track],
-        replace=False
+        mode: LoadfileOption
     ):
-        self.mpv.enqueue([t.path() for t in tracks], replace=replace)
+        if len(tracks) == 0:
+            return
+        self.mpv.enqueue([t.path() for t in tracks], mode=mode)
 
     def enqueue_track_by_id(self, track_id):
         track = self.db.get_track_by_id(track_id)
         self.mpv.enqueue([track.path()])
 
     def get_current_track(self):
-        p = self.mpv.current_track()['data']
-        return self.db.get_track_by_path(p)
+        result = self.mpv.current_track()
+        if 'error' in result:
+            return None
+        return self.db.get_track_by_path(result['data'])

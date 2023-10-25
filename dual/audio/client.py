@@ -7,6 +7,14 @@ import time
 import redis
 import subprocess
 
+from enum import Enum
+
+
+class LoadfileOption(str, Enum):
+    append = 'append'
+    append_play = 'append-play'
+    replace = 'replace'
+
 
 def pid_is_running(pid):
     if not pid.isdigit():
@@ -95,12 +103,13 @@ class MpvClient:
             time.sleep(0.1)
         self._unobserve_property(name)
 
-    def enqueue(self, paths, replace=False):
-        if replace:
-            p = paths.pop(0)
-            self._command({'command': ['loadfile', p, 'replace']})
+    def enqueue(self, paths, mode=LoadfileOption.append):
+        match mode:
+            case LoadfileOption.append_play | LoadfileOption.replace as initial:
+                p = paths.pop(0)
+                self._command({'command': ['loadfile', p, initial]})
         for path in paths:
-            self._command({'command': ['loadfile', path, 'append-play']})
+            self._command({'command': ['loadfile', path, 'append']})
 
     def pause(self):
         return self._command({'command': ['set_property', 'pause', True]})

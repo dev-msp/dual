@@ -1,1 +1,1 @@
-from .client import MpvClient
+from .client import MpvClient, LoadfileOption
