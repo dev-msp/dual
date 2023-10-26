@@ -60,13 +60,19 @@ class QuestionSequence(urwid.WidgetWrap):
     def __init__(self, app):
         self.app = app
         super().__init__(urwid.Filler(urwid.Text('Loading...')))
-        self.new_question()
 
     def selectable(self):
         return True
 
     def new_question(self):
-        a, b = self.app.get_elimination_pair()
+        try:
+            a, b = self.app.get_elimination_pair()
+        except ValueError as e:
+            return False
+        except Exception as e:
+            raise e
+        except KeyboardInterrupt:
+            raise urwid.ExitMainLoop()
         winner_id = self.app.winner.id() if self.app.winner else None
 
         cur_playing = self.app.player.get_current_track()
@@ -85,6 +91,7 @@ class QuestionSequence(urwid.WidgetWrap):
             TrackView(b)
         )
         self._w = Question(self.comparison)
+        return True
 
     def keypress(self, size, key):
         key = super().keypress(size, key)
@@ -107,7 +114,8 @@ class QuestionSequence(urwid.WidgetWrap):
                 key_to_response
             )
 
-        self.new_question()
+        if not self.new_question():
+            raise urwid.ExitMainLoop()
 
 
 def exit_on_q(key):
@@ -127,6 +135,7 @@ def main():
     ]
     loop = urwid.MainLoop(fill, palette, unhandled_input=exit_on_q)
     loop.screen.set_terminal_properties(colors=256)
+    fill.new_question()
     loop.run()
     app.mpv.kill()
 
