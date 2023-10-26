@@ -45,6 +45,9 @@ class App:
         self._wins = 0
         self._winner = None
 
+    def __repr__(self):
+        return f'<App {self.db}>'
+
     @property
     def wins(self) -> int:
         """Get the current winning streak"""

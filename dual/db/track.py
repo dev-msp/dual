@@ -2,10 +2,6 @@ from sqlite3 import Row
 from datetime import datetime
 
 
-def build_kv_string(row: Row):
-    return ", ".join([f"{k}={v}" for k, v in dict(row).items()])
-
-
 class Track:
     def __init__(self, row: Row):
         self.row = row
@@ -14,7 +10,7 @@ class Track:
         return f"{self.row['title']} by {self.row['artist']}"
 
     def __repr__(self):
-        return f"Track({build_kv_string(self.row)})"
+        return f"Track(id={self.id()}, title={self.title()}, artist={self.artist()})"
 
     def _has_key(self, key):
         return key in self.row.keys()

@@ -17,6 +17,9 @@ class Beets:
         self.conn.row_factory = sqlite3.Row
         self.cursor = self.conn.cursor()
 
+    def __repr__(self):
+        return f'<Beets path={shorten_path(self.path)}>'
+
     def get_track_by_id(self, id):
         """Get a track by its id"""
         query = """
