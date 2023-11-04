@@ -1,19 +1,21 @@
-import os
-from random import sample
+"""The Dual app."""
+
+import logging
 from enum import Enum
 
 from dual.bloom import BloomFilter
-from dual.db import Beets, Track
 from dual.audio import MpvClient
 from dual.audio.player import Player
+from dual.db.item import Item
 from dual.elo import new_score
 
 
 class UserResponse(Enum):
-    """The user response to a question"""
-    win = 'win'
-    lose = 'lose'
-    draw = 'draw'
+    """The user response to a question."""
+
+    WIN = "win"
+    LOSE = "lose"
+    DRAW = "draw"
 
 
 class RoundFilter(BloomFilter):
@@ -37,16 +39,19 @@ class App:
     """The Dual app"""
 
     def __init__(self):
-        self.db = Beets(os.getenv('XDG_CONFIG_HOME') + '/beets/library.db')
-        self.mpv = MpvClient()
-        self.player = Player(self.db, self.mpv)
+        """Initialize the app."""
+        logging.debug("Initializing app...")
+        self.mpv = None
+        self.player = None
         self.rounds = RoundFilter()
         self.max_consecutive_wins = 5
         self._wins = 0
         self._winner = None
+        logging.debug("Initialized app")
 
     def __repr__(self):
-        return f'<App {self.db}>'
+        """Get the string representation of the app."""
+        return "<App strategy={}>".format(self.strategy)
 
     @property
     def wins(self) -> int:
@@ -54,20 +59,19 @@ class App:
         return self._wins
 
     @property
-    def winner(self) -> Track | None:
-        """Get the winner of the last question"""
+    def winner(self) -> Item | None:
+        """Get the winner of the last question."""
         return self._winner
 
     @winner.setter
-    def winner(self, track: Track):
-        """Set the winner of the last question"""
+    def winner(self, track: Item):
+        """Set the winner of the last question."""
         # reset the winner and streak if the value is None or streak is maxed
         if track is None:
             self._wins = 0
             self._winner = None
 
-        track.reload(self.db)
-        if self._winner is not None and track.id() == self._winner.id():
+        if self._winner is not None and track.id == self._winner.id:
             if self._wins >= self.max_consecutive_wins:
                 self._wins = 0
                 self._winner = None
@@ -77,7 +81,6 @@ class App:
         else:
             # reset the streak if the winner is different
             self._wins = 1
-            track.reload(self.db)
             self._winner = track
 
     @winner.deleter
@@ -139,25 +142,23 @@ class App:
 
         self.rounds.add(song1, song2)
         score_from_response = {
-            UserResponse.win: 1,
-            UserResponse.lose: 0,
-            UserResponse.draw: 0.5
+            UserResponse.WIN: 1,
+            UserResponse.LOSE: 0,
+            UserResponse.DRAW: 0.5,
         }[user_response]
 
-        song1_score, song2_score = new_score(
-            song1.score(),
-            song2.score(),
-            score_from_response
-        )
+        song1_score, song2_score = new_score(song1.score, song2.score, score_from_response)
+        Item.get_by_id(song1.id).update_score(song1_score)
+        Item.get_by_id(song2.id).update_score(song2_score)
 
-        self.db.update_score(song1, song1_score)
-        self.db.update_score(song2, song2_score)
+        song1 = Item.namedtuple_from_id(song1.id)
+        song2 = Item.namedtuple_from_id(song2.id)
 
-        if user_response == UserResponse.win:
+        if user_response == UserResponse.WIN:
             self.winner = song1
-        elif user_response == UserResponse.lose:
+            self.strategy.register_rating(song1, song2)
+        elif user_response == UserResponse.LOSE:
             self.winner = song2
-
     def _supplement_pair(
         self,
         pair: list[Track],

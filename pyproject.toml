@@ -13,6 +13,7 @@ authors = [
 dependencies = [
   "urwid",
   "redis",
+  "peewee",
   "mmh3",
   "bitarray"
 ]
