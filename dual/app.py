@@ -19,24 +19,28 @@ class UserResponse(Enum):
 
 
 class RoundFilter(BloomFilter):
-    """A bloom filter that keeps track of the rounds"""
+    """A bloom filter that keeps track of the rounds."""
 
     def __init__(self):
+        """Initialize the bloom filter."""
         super().__init__(int(77e3), 13)
 
-    def _as_string(self, ta: Track, tb: Track):
-        aid, bid = sorted([ta.id(), tb.id()])
-        return f'{aid}-{bid}'
+    def _as_string(self, ta: Item, tb: Item):
+        """Convert the pair to a string."""
+        aid, bid = sorted([ta.id, tb.id])
+        return f"{aid}-{bid}"
 
-    def add(self, ta: Track, tb: Track):
-        super().add(self._as_string(ta, tb))
+    def add(self, pair: tuple[Item, Item]):
+        """Add the pair to the bloom filter."""
+        super().add(self._as_string(*pair))
 
-    def possibly_contains(self, ta: Track, tb: Track):
-        return super().possibly_contains(self._as_string(ta, tb))
+    def possibly_contains(self, pair: tuple[Item, Item]) -> bool:
+        """Check if the bloom filter possibly contains the pair."""
+        return super().possibly_contains(self._as_string(*pair))
 
 
 class App:
-    """The Dual app"""
+    """The Dual app."""
 
     def __init__(self):
         """Initialize the app."""
@@ -55,7 +59,7 @@ class App:
 
     @property
     def wins(self) -> int:
-        """Get the current winning streak"""
+        """Get the current winning streak."""
         return self._wins
 
     @property
@@ -85,7 +89,7 @@ class App:
 
     @winner.deleter
     def winner(self):
-        """Delete the winner of the last question"""
+        """Delete the winner of the last question."""
         self._wins = 0
         self._winner = None
 
@@ -139,8 +143,7 @@ class App:
             song2 (Track): song2
             user_response (str): the outcome for song 1
         """
-
-        self.rounds.add(song1, song2)
+        self.rounds.add((song1, song2))
         score_from_response = {
             UserResponse.WIN: 1,
             UserResponse.LOSE: 0,

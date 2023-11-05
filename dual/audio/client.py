@@ -1,21 +1,25 @@
-# client for interacting with mpv's JSON IPC interface
+"""
+Client for interacting with mpv's JSON IPC interface.
+
 # https://mpv.io/manual/master/#json-ipc
+"""
 
 import json
 import logging
 import os
 import socket
-import time
-import redis
 import subprocess
-
+import time
 from enum import Enum
+
+import redis
 
 
 class LoadfileOption(str, Enum):
-    append = 'append'
-    append_play = 'append-play'
-    replace = 'replace'
+    """Options for the loadfile command."""
+    APPEND = 'append'
+    APPEND_PLAY = 'append-play'
+    REPLACE = 'replace'
 
 
 def pid_is_active(pid):
@@ -30,10 +34,12 @@ def pid_is_active(pid):
 
 
 def pid_from_socket_path(socket_path):
+    """Get the pid from a socket path."""
     return socket_path.decode('utf-8').split('/')[-1]
 
 
 def get_mpv_socket(redis_client):
+    """Get the socket path for the mpv process."""
     process = subprocess.Popen(
         ['mpv', '--idle=yes', '--no-terminal', '--profile=music']
     )
@@ -72,6 +78,8 @@ def get_mpv_socket(redis_client):
 
 
 class MpvClient:
+    """Client for interacting with mpv's JSON IPC interface."""
+
     def __init__(self):
         """Initialize the client."""
         redis_client = redis.Redis()
@@ -86,10 +94,11 @@ class MpvClient:
         self._command({'command': ['quit', '0']})
 
     def _send(self, command):
-        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as s:
-            s.connect(self.socket_path)
-            s.sendall(command.encode('utf-8'))
-            response = s.recv(1024)
+        """Send a command to the mpv socket."""
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+            sock.connect(self.socket_path)
+            sock.sendall(command.encode('utf-8'))
+            response = sock.recv(1024)
         return response
 
     def _send_and_parse(self, command: str):
@@ -107,48 +116,61 @@ class MpvClient:
         return self._command({'command': ['get_property', name]})
 
     def observe_property(self, name):
+        """Observe a property."""
         return self._command({'command': ['observe_property', 1, name]})
 
     def unobserve_property(self, name):
+        """Unobserve a property."""
         return self._command({'command': ['unobserve_property', name]})
 
     def observe_property_until(self, name, value):
+        """Observe a property until it is equal to value."""
         self.observe_property(name)
         while self._property(name) != value:
             time.sleep(0.1)
         self.unobserve_property(name)
 
-    def enqueue(self, paths, mode=LoadfileOption.append):
+    def enqueue(self, paths, mode=LoadfileOption.APPEND):
+        """Enqueue a list of paths."""
         match mode:
-            case LoadfileOption.append_play | LoadfileOption.replace as initial:
+            case LoadfileOption.APPEND_PLAY | LoadfileOption.REPLACE as initial:
                 path = paths.pop(0)
                 self._command({'command': ['loadfile', path, initial]})
         for path in paths:
             self._command({'command': ['loadfile', path, 'append']})
 
     def pause(self):
+        """Pause the current track."""
         return self._command({'command': ['set_property', 'pause', True]})
 
     def play(self):
+        """Play the current track."""
         return self._command({'command': ['set_property', 'pause', False]})
 
     def stop(self):
+        """Stop the current track."""
         return self._command({'command': ['stop']})
 
     def current_track(self):
+        """Get the current track."""
         return self.get_property('path')
 
     def loadfile(self, path):
+        """Load a file."""
         return self._command({'command': ['loadfile', path]})
 
     def get_property(self, name):
+        """Get a property."""
         return self._property(name)
 
     def get_time_pos(self):
+        """Get the current time position."""
         return self.get_property('time-pos')
 
     def get_duration(self):
+        """Get the current track duration."""
         return self.get_property('duration')
 
     def get_filename(self):
+        """Get the current track filename."""
         return self.get_property('filename')
