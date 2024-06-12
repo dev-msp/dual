@@ -12,8 +12,6 @@ import subprocess
 import time
 from enum import Enum
 
-import redis
-
 
 class LoadfileOption(str, Enum):
     """Options for the loadfile command."""
@@ -38,27 +36,17 @@ def pid_from_socket_path(socket_path):
     return socket_path.decode('utf-8').split('/')[-1]
 
 
-def get_mpv_socket(redis_client):
-    """Get the socket path for the mpv process."""
-    process = subprocess.Popen(
-        ['mpv', '--idle=yes', '--no-terminal', '--profile=music']
-    )
+def get_mpv_socket():
+    """Wait for the mpv socket to be ready."""
+    socket_path = '/tmp/mpv-socket-dual'
+    cmd = ['mpv', '--idle=yes', '--no-terminal', '--video=no', f'--input-ipc-server={socket_path}']
+    print(cmd)
+    process = subprocess.Popen(cmd)
     logging.info('Started mpv process with pid %s', process.pid)
-    redis_client.set(
-        'mpv-socket/current',
-        f'/tmp/mpv-socket-{process.pid}',
-    )
 
-    socket_path = None
     num_tries = 0
-    while socket_path is None and num_tries < 10:
-        current = redis_client.get('mpv-socket/current')
-        if (
-            current is not None and
-                current.decode('utf-8').endswith(str(process.pid)) and
-                os.path.exists(current.decode('utf-8'))
-        ):
-            socket_path = current
+    while num_tries < 10:
+        if (os.path.exists(socket_path)):
             break
         to_sleep = 0.1 * 1.3**num_tries
         logging.info(
@@ -68,13 +56,10 @@ def get_mpv_socket(redis_client):
         time.sleep(to_sleep)
         num_tries += 1
 
-    if socket_path is None:
-        raise Exception('Could not get socket path from redis')
+    if num_tries >= 10:
+        raise ValueError('Could not get socket path')
 
-    if not pid_is_active(pid_from_socket_path(socket_path)):
-        raise Exception('Could not connect to mpv socket')
-
-    return socket_path.decode('utf-8'), process
+    return socket_path, process
 
 
 class MpvClient:
@@ -82,8 +67,9 @@ class MpvClient:
 
     def __init__(self):
         """Initialize the client."""
-        redis_client = redis.Redis()
-        socket_path, process = get_mpv_socket(redis_client)
+        socket_path, process = get_mpv_socket()
+
+        print(socket_path)
 
         self.socket_path = socket_path
         self.process = process
@@ -92,6 +78,8 @@ class MpvClient:
         """Kill the mpv process."""
         logging.info('Quitting mpv process')
         self._command({'command': ['quit', '0']})
+        # remove the socket file
+        os.remove(self.socket_path)
 
     def _send(self, command):
         """Send a command to the mpv socket."""
