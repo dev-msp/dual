@@ -2,12 +2,15 @@
 # asking  which one they like better
 
 import logging
+import argparse
 from datetime import datetime
 
 import urwid
 
-from dual.app import App, UserResponse
+from dual.app import App
+from dual.strategy import UserResponse
 from dual.audio import LoadfileOption
+from dual.query import Query, DateRangeQuery, FloatRangeQuery, IntRangeQuery
 
 logging.basicConfig(
     filename='dual.log',
@@ -35,6 +38,7 @@ class TrackView(Referent):
             urwid.Text(('orange', track.artist)),
         ]
         if track.score is not None:
+            logging.debug("Track %s has score %s", track.title, track.score)
             # round to 2
             for_pile.append(urwid.Text(f"Score: {track.score:.2f}"))
         if track.last_rated_at is not None:
@@ -85,6 +89,8 @@ class QuestionSequence(urwid.WidgetWrap):
         """Get a new question."""
         try:
             a, b = self.app.get_elimination_pair()
+            if a is None or b is None:
+                return False
         except ValueError as e:
             logging.error(e)
             return False
@@ -114,7 +120,7 @@ class QuestionSequence(urwid.WidgetWrap):
         return True
 
     def keypress(self, size, key):
-        key = super().keypress(size, key)
+        # key = super().keypress(size, key)
         return self.unhandled_input(size, key)
 
     def unhandled_input(self, size, key):
@@ -144,8 +150,55 @@ def exit_on_q(key):
         raise urwid.ExitMainLoop()
 
 
-def main():
-    app = App()
+parser = argparse.ArgumentParser()
+
+subparsers = parser.add_subparsers(
+    dest='command',
+    help='The command to run'
+)
+
+app_parser = subparsers.add_parser(
+    'app',
+    help='Run the main app'
+)
+
+app_parser.add_argument(
+    '--artist',
+    help='The artist to select',
+    type=str,
+    default=None
+)
+
+app_parser.add_argument(
+    '--limit',
+    help='The number of tracks to select',
+    type=int,
+    default=None
+)
+
+app_parser.add_argument(
+    '--top',
+    help='Select the top tracks, instead of random ones',
+    action='store_true',
+    default=False
+)
+
+query_parser = subparsers.add_parser(
+    'query',
+    help='Query the library'
+)
+
+query_parser.add_argument(
+    'query',
+    help='The query to run',
+    type=str,
+    nargs='+',
+    default=None
+)
+
+
+def run_app(artist=None, limit=None, top=False):
+    app = App(artist, limit, top)
     app.connect()
 
     fill = QuestionSequence(app)
@@ -163,6 +216,30 @@ def main():
     logging.info('Main loop exited')
     app.mpv.kill()
     logging.info('Exiting')
+
+
+def main():
+    args = parser.parse_args()
+    if args.command == 'app':
+        run_app(
+            artist=args.artist,
+            limit=args.limit,
+            top=args.top
+        )
+    elif args.command == 'query':
+        print(args.query)
+        q = Query(field_type_mapping={
+            'score': FloatRangeQuery,
+            'rating_count': IntRangeQuery,
+            'last_rated_at': DateRangeQuery,
+            'added': DateRangeQuery,
+            'year': IntRangeQuery,
+
+        })
+        q.parse(' '.join(args.query))
+        print(q)
+    else:
+        print(f"Unknown command {args.command}")
 
 
 if __name__ == '__main__':

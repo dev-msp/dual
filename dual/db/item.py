@@ -123,6 +123,7 @@ class ItemAttribute(BaseModel):
     SCORE = ('score', 'real')
     LAST_RATED_AT = ('last_rated_at', 'integer')
     RATING_COUNT = ('rating_count', 'integer')
+    VARIANT = ('variant', 'text')
 
     entity_id = ForeignKeyField(Item, backref='attributes')
     key = CharField()
@@ -134,7 +135,7 @@ class ItemAttribute(BaseModel):
     @classmethod
     def cte(cls, key: str, type: str):
         return cls.select(cls.entity_id, cls.value.cast(type).alias(key)) \
-            .where(cls.key == key).cte(key)
+            .where(cls.key == key).cte(f'cte_{key}')
 
     @classmethod
     def ctes(cls):
