@@ -3,3 +3,6 @@ build/
 *.egg-info/
 .ropeproject
 dual.log
+node_modules/
+src/dist/
+src/dist/

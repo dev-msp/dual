@@ -1,0 +1,31 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@tailwind utilities;
+
+:root {
+  --bg: theme("colors.gray.900");
+  --fg: theme("colors.blue.100");
+}
+
+body {
+  font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
+  background-color: var(--bg);
+  color: var(--fg);
+}
+
+main {
+  padding: 1rem; /* Instead of @apply p-4 */
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  h1 {
+    max-width: none;
+  }
+
+  p {
+    max-width: none;
+  }
+}
