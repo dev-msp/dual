@@ -3,6 +3,8 @@
 
 @tailwind utilities;
 
+/* slightly desaturated light tan: #D8B18A */
+
 :root {
   --bg: theme("colors.gray.900");
   --fg: theme("colors.blue.100");

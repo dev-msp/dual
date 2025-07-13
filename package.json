@@ -8,7 +8,10 @@
   },
   "dependencies": {
     "@solidjs/meta": "^0.29.4",
-    "solid-js": "^1.9.5"
+    "drizzle-orm": "^0.44.2",
+    "rxjs": "^7.8.2",
+    "solid-js": "^1.9.5",
+    "zod": "^4.0.5"
   },
   "peerDependencies": {
     "typescript": "^5.8.2"
@@ -20,7 +23,7 @@
     "@solid-devtools/overlay": "^0.33.1",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.0.15",
-    "@types/bun": "^1.2.5",
+    "@types/bun": "^1.2.18",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",

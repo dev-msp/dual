@@ -15,7 +15,8 @@
     "verbatimModuleSyntax": true,
     "noEmit": true,
     "types": [
-      "vite/client"
+      "vite/client",
+      "@types/bun"
     ],
 
     // Best practices

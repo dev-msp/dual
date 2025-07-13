@@ -8,9 +8,12 @@ export default defineConfig(() => ({
   root: "src",
 
   server: {
-    port: 1420,
-    strictPort: true,
-    host: false,
-    hmr: undefined,
+    port: 3000,
+    proxy: {
+      "/api": {
+        target: "http://localhost:5000/",
+        changeOrigin: true,
+      },
+    },
   },
 }));
