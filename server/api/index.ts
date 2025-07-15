@@ -1,153 +1,109 @@
-import { eq, sql } from "drizzle-orm";
-import { EMPTY, from, Observable, of, Subject, timer } from "rxjs";
-import * as op from "rxjs/operators";
-import z from "zod/v4";
+import { asc, desc } from "drizzle-orm";
+import * as sqlCore from "drizzle-orm/sqlite-core";
 
-import { db } from "../db";
-import { albums, items } from "../db/schema";
+import { type Db } from "../db";
+import { artMapping } from "../db/album_queries";
+import { itemsWithScore } from "../db/query";
+import { items } from "../db/schema";
+
+const scoredItems = sqlCore.sqliteView("items_with_score").as(itemsWithScore);
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
-type JsonRecord = Record<string, Json>;
 
-export type WorkerEvent<
-  P extends JsonRecord = JsonRecord,
-  T extends Json = Json,
-> =
-  | { type: "start" }
-  | { type: "progress"; data?: P }
-  | ({ type: "complete" } & TaskResult<T>)
-  | { type: "error"; error: string; data?: P };
+const serveJson = (value: Json) =>
+  new Response(JSON.stringify(value), {
+    headers: { "Content-Type": "application/json" },
+  });
 
-export type TaskResult<T extends Json = Json> =
-  | { success: true; data: T }
-  | { success: false; error: string };
+// const jsonSchema: z.ZodType<Json> = z.json();
 
-export interface Task<T extends string, P extends JsonRecord> {
-  id: string;
-  type: T;
-  payload?: P;
-}
+type Values<T> = T[keyof T];
 
-const identSchema = z
-  .string()
-  .refine(
-    (arg) => /^[a-z][a-z0-9_]*[a-z0-9]$/.test(arg),
-    "should be a valid identifier (e.g., 'foo_bar')",
-  );
+type DbTable =
+  | Extract<Values<Db["_"]["fullSchema"]>, sqlCore.SQLiteTable>
+  | typeof scoredItems;
 
-const itemWithArtPath = (
-  itemId: number,
-): {
-  trackId: number;
-  albumId: number;
-  artPath: string | null;
-} => {
-  const q = db
-    .select({
-      trackId: items.id,
-      albumId: albums.id,
-      artPath: albums.artpath,
-    })
-    .from(items)
-    .innerJoin(albums, eq(items.album_id, albums.id))
-    .where(eq(items.id, itemId));
-  console.log("Querying for item ID:", q.toSQL().sql);
-  const rec = q.get();
-  if (!rec) {
-    throw new Error(`Item with ID ${itemId} not found`);
-  }
-  return {
-    ...rec,
-    artPath: rec.artPath ? new TextDecoder("utf-8").decode(rec.artPath) : null,
+type Columns<T extends DbTable> = Extract<
+  keyof T,
+  "score" | keyof (typeof items)["_"]["columns"]
+>;
+
+export type Ordering = {
+  field: Columns<typeof scoredItems>;
+  direction: "asc" | "desc";
+};
+
+type Options = {
+  limit?: number;
+  offset?: number;
+  order?: Ordering[];
+};
+
+const defaultOptions: Required<Options> = {
+  limit: 100,
+  offset: 0,
+  order: [{ field: "id", direction: "asc" }],
+};
+
+export const optsFromRequest = (req: Request): Options => {
+  const params = new URL(req.url).searchParams;
+  const limit = params.get("limit");
+  const offset = params.get("offset");
+  const order = params.get("order");
+
+  const opts: Options = {
+    limit: limit ? parseInt(limit, 10) : undefined,
+    offset: offset ? parseInt(offset, 10) : undefined,
+    order: order
+      ? order.split(",").map((o) => {
+          const [field, direction] = o.split(":");
+          if (!["asc", "desc"].includes(direction)) {
+            throw new Error(`Invalid order format: ${o}`);
+          }
+          return {
+            field: field as Columns<typeof items>,
+            direction: direction as "asc" | "desc",
+          };
+        })
+      : undefined,
   };
+
+  return compact(opts);
 };
 
-export const taskSchema = z
-  .object({
-    id: z.uuidv7(),
-    type: identSchema,
-    payload: z.optional(z.record(z.string(), z.json())),
-  })
-  .and(
-    z.discriminatedUnion("type", [
-      z.object({
-        type: z.literal("load_art"),
-        payload: z
-          .object({ trackId: z.number() })
-          .transform(({ trackId }, ctx) => {
-            try {
-              return itemWithArtPath(trackId);
-            } catch (error) {
-              ctx.addIssue({
-                code: "custom",
-                message:
-                  error instanceof Error ? error.message : "Unknown error",
-              });
-              return z.NEVER;
-            }
-          }),
-      }),
-    ]),
+const compact = (obj: Record<string, unknown>) => {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => !!value),
   );
-
-export type DomainTask = z.input<typeof taskSchema>;
-
-const rawTasks$ = new Subject<unknown>();
-
-export const enqueueTask = (task: unknown) => {
-  rawTasks$.next(task);
 };
 
-export const tasks$: Observable<z.infer<typeof taskSchema>> = rawTasks$
-  .asObservable()
-  .pipe(
-    op.mergeMap(
-      (task): Observable<z.infer<typeof taskSchema>> =>
-        from(taskSchema.safeParseAsync(task)).pipe(
-          op.concatMap((parsed) => {
-            if (parsed.success) {
-              return of(parsed.data);
-            } else {
-              console.error("Invalid task:", parsed.error);
-              return EMPTY;
-            }
-          }),
-        ),
-    ),
-    op.tap({
-      next: (task) => {
-        console.log(`Received task: ${task.id} of type ${task.type}`);
-      },
-      error: (err) => {
-        console.error("Error processing task:", err);
-      },
-    }),
-  );
+export const listTracks = (db: Db, opts?: Options) => {
+  const requiredOpts: Required<Options> = {
+    ...defaultOptions,
+    ...opts,
+  };
 
-timer(1e3)
-  .pipe(
-    op.repeat(4),
-    op.concatMap((): Observable<DomainTask> => {
-      const randomId = db
-        .select({ id: items.id })
-        .from(items)
-        .orderBy(sql`RANDOM()`)
-        .limit(1)
-        .get()?.id;
-      if (!randomId) {
-        console.warn("No items found in the database.");
-        return EMPTY;
-      }
-      return of({
-        id: Bun.randomUUIDv7(),
-        type: "load_art",
-        payload: { trackId: randomId },
-      });
-    }),
-  )
-  .subscribe((t) => enqueueTask(t));
+  const decoder = new TextDecoder("utf-8");
+  const subquery = db.$with("items_with_score").as(itemsWithScore);
+  const q = db.with(subquery).select().from(scoredItems);
 
-export type Job<
-  P extends JsonRecord = JsonRecord,
-  T extends Record<string, Json> = Record<string, Json>,
-> = Observable<WorkerEvent<P, T>>;
+  const mapping = artMapping();
+
+  const data = q
+    .limit(requiredOpts.limit)
+    .offset(requiredOpts.offset)
+    .orderBy(
+      ...requiredOpts.order.map(({ field, direction }) =>
+        direction === "desc"
+          ? desc(scoredItems[field])
+          : asc(scoredItems[field]),
+      ),
+    )
+    .all()
+    .map((item) => ({
+      ...item,
+      path: item.path ? decoder.decode(item.path) : item.path,
+      artPath: item.album_id ? (mapping[item.album_id] ?? null) : null,
+    }));
+  return serveJson(data);
+};
