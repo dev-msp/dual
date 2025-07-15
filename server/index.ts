@@ -1,10 +1,7 @@
 import * as sqlCore from "drizzle-orm/sqlite-core";
-import { pipe, type OperatorFunction } from "rxjs";
-import * as op from "rxjs/operators";
-import z from "zod/v4";
 
-import type { DomainTask, Job } from "./api";
-import { makeDb, type Db } from "./db";
+import { tasks$ } from "./api";
+import { db, type Db } from "./db";
 import { itemsWithScore } from "./db/query";
 import { albums } from "./db/schema";
 
@@ -15,7 +12,7 @@ const serveJson = (value: Json) =>
     headers: { "Content-Type": "application/json" },
   });
 
-const jsonSchema: z.ZodType<Json> = z.json();
+// const jsonSchema: z.ZodType<Json> = z.json();
 
 const listTracks = (db: Db) => {
   const decoder = new TextDecoder("utf-8");
@@ -36,6 +33,8 @@ const listTracks = (db: Db) => {
       {} as Record<string, string>,
     );
 
+  console.log(artMapping);
+
   const data = q
     .limit(100)
     .all()
@@ -47,24 +46,35 @@ const listTracks = (db: Db) => {
   return serveJson(data);
 };
 
-const db = await makeDb();
+tasks$.subscribe({
+  next: (task) => {
+    console.log("Task received:", task);
+    // Here you can handle the task, e.g., process it or store it in a queue
+  },
+  error: (err) => {
+    console.error("Error in tasks stream:", err);
+  },
+  complete: () => {
+    console.log("Tasks stream completed");
+  },
+});
 
-const WORKER_COUNT = 4;
+// const WORKER_COUNT = 4;
 
 // type WorkerEvent<P extends TaskPayload = TaskPayload, T extends Json = Json> = {
 //   type: "start" | "progress" | "complete" | "error";
 //   data?: T;
 // };
 
-const workers: OperatorFunction<DomainTask, Job> = pipe(
-  op.mergeMap((task) => {
-    switch (task.type) {
-      case "load_art": {
-        return task.payload;
-      }
-    }
-  }, WORKER_COUNT),
-);
+// const workers: OperatorFunction<DomainTask, Job> = pipe(
+//   op.mergeMap((task) => {
+//     switch (task.type) {
+//       case "load_art": {
+//         return task.payload;
+//       }
+//     }
+//   }, WORKER_COUNT),
+// );
 
 Bun.serve({
   port: 5000,

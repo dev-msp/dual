@@ -101,7 +101,7 @@ export const itemAttributesRelations = relations(itemAttributes, ({ one }) => ({
 
 export const albums = sql.sqliteTable("albums", {
   id: sql.integer("id").primaryKey(),
-  artpath: sql.blob("path", { mode: "buffer" }).$type<Uint8Array>(),
+  artpath: sql.blob("artpath", { mode: "buffer" }).$type<Uint8Array>(),
   added: sql.real("added"),
   albumartist: sql.text("albumartist"),
   albumartist_sort: sql.text("albumartist_sort"),

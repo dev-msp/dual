@@ -1,5 +1,5 @@
-import { eq } from "drizzle-orm";
-import { EMPTY, from, Observable, of, Subject } from "rxjs";
+import { eq, sql } from "drizzle-orm";
+import { EMPTY, from, Observable, of, Subject, timer } from "rxjs";
 import * as op from "rxjs/operators";
 import z from "zod/v4";
 
@@ -35,9 +35,36 @@ const identSchema = z
     "should be a valid identifier (e.g., 'foo_bar')",
   );
 
+const itemWithArtPath = (
+  itemId: number,
+): {
+  trackId: number;
+  albumId: number;
+  artPath: string | null;
+} => {
+  const q = db
+    .select({
+      trackId: items.id,
+      albumId: albums.id,
+      artPath: albums.artpath,
+    })
+    .from(items)
+    .innerJoin(albums, eq(items.album_id, albums.id))
+    .where(eq(items.id, itemId));
+  console.log("Querying for item ID:", q.toSQL().sql);
+  const rec = q.get();
+  if (!rec) {
+    throw new Error(`Item with ID ${itemId} not found`);
+  }
+  return {
+    ...rec,
+    artPath: rec.artPath ? new TextDecoder("utf-8").decode(rec.artPath) : null,
+  };
+};
+
 export const taskSchema = z
   .object({
-    id: z.uuidv4(),
+    id: z.uuidv7(),
     type: identSchema,
     payload: z.optional(z.record(z.string(), z.json())),
   })
@@ -48,33 +75,22 @@ export const taskSchema = z
         payload: z
           .object({ trackId: z.number() })
           .transform(({ trackId }, ctx) => {
-            const rec = db
-              .select()
-              .from(items)
-              .innerJoin(albums, eq(items.album_id, albums.id))
-              .where(eq(items.id, trackId))
-              .get();
-            if (!rec) {
+            try {
+              return itemWithArtPath(trackId);
+            } catch (error) {
               ctx.addIssue({
                 code: "custom",
-                message: `Track with ID ${trackId} not found`,
+                message:
+                  error instanceof Error ? error.message : "Unknown error",
               });
               return z.NEVER;
             }
-
-            return {
-              trackId: rec.items.id,
-              albumId: rec.albums.id,
-              artPath: rec.albums.artpath
-                ? new TextDecoder("utf-8").decode(rec.albums.artpath)
-                : null,
-            };
           }),
       }),
     ]),
   );
 
-export type DomainTask = z.infer<typeof taskSchema>;
+export type DomainTask = z.input<typeof taskSchema>;
 
 const rawTasks$ = new Subject<unknown>();
 
@@ -82,29 +98,54 @@ export const enqueueTask = (task: unknown) => {
   rawTasks$.next(task);
 };
 
-export const tasks$: Observable<DomainTask> = rawTasks$.asObservable().pipe(
-  op.mergeMap(
-    (task): Observable<z.infer<typeof taskSchema>> =>
-      from(taskSchema.safeParseAsync(task)).pipe(
-        op.concatMap((parsed) => {
-          if (parsed.success) {
-            return of(parsed.data);
-          } else {
-            console.error("Invalid task:", parsed.error);
-            return EMPTY;
-          }
-        }),
-      ),
-  ),
-  op.tap({
-    next: (task) => {
-      console.log(`Received task: ${task.id} of type ${task.type}`);
-    },
-    error: (err) => {
-      console.error("Error processing task:", err);
-    },
-  }),
-);
+export const tasks$: Observable<z.infer<typeof taskSchema>> = rawTasks$
+  .asObservable()
+  .pipe(
+    op.mergeMap(
+      (task): Observable<z.infer<typeof taskSchema>> =>
+        from(taskSchema.safeParseAsync(task)).pipe(
+          op.concatMap((parsed) => {
+            if (parsed.success) {
+              return of(parsed.data);
+            } else {
+              console.error("Invalid task:", parsed.error);
+              return EMPTY;
+            }
+          }),
+        ),
+    ),
+    op.tap({
+      next: (task) => {
+        console.log(`Received task: ${task.id} of type ${task.type}`);
+      },
+      error: (err) => {
+        console.error("Error processing task:", err);
+      },
+    }),
+  );
+
+timer(1e3)
+  .pipe(
+    op.repeat(4),
+    op.concatMap((): Observable<DomainTask> => {
+      const randomId = db
+        .select({ id: items.id })
+        .from(items)
+        .orderBy(sql`RANDOM()`)
+        .limit(1)
+        .get()?.id;
+      if (!randomId) {
+        console.warn("No items found in the database.");
+        return EMPTY;
+      }
+      return of({
+        id: Bun.randomUUIDv7(),
+        type: "load_art",
+        payload: { trackId: randomId },
+      });
+    }),
+  )
+  .subscribe((t) => enqueueTask(t));
 
 export type Job<
   P extends JsonRecord = JsonRecord,
