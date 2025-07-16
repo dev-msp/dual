@@ -37,3 +37,26 @@ export const itemWithArtPath = (
     artPath: rec.artPath ? new TextDecoder("utf-8").decode(rec.artPath) : null,
   };
 };
+
+export const albumArtPath = (
+  albumId: number,
+): {
+  albumId: number;
+  artPath: string | null;
+} => {
+  const rec = db
+    .select({
+      albumId: albums.id,
+      artPath: albums.artpath,
+    })
+    .from(albums)
+    .where(eq(albums.id, albumId))
+    .get();
+  if (!rec) {
+    throw new Error(`Album with ID ${albumId} not found`);
+  }
+  return {
+    ...rec,
+    artPath: rec.artPath ? new TextDecoder("utf-8").decode(rec.artPath) : null,
+  };
+};

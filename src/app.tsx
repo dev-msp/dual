@@ -15,9 +15,10 @@ import { z } from "zod/v4";
 
 import type { Ordering } from "../server/api";
 
-import { TrackList, trackSchema, type Track } from "./components/TrackList";
+import { TrackList } from "./components/TrackList";
 import { observable } from "./lib/reactive";
 import { elementStream } from "./lib/reactive/dom";
+import { trackSchema, type Track } from "./schemas/track";
 
 type OrderProps = {
   value: Ordering[];
@@ -142,7 +143,7 @@ export const App = () => {
     order,
     async (ord) => {
       const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
-      const resp = await fetch(`/api/tracks?order=${orderParam}&limit=100`, {
+      const resp = await fetch(`/api/tracks?order=${orderParam}`, {
         headers: { Accept: "application/json" },
       });
       try {
@@ -169,7 +170,10 @@ export const App = () => {
     );
   });
 
-  const [audioEl$, audioRef] = elementStream<HTMLAudioElement>((el) => of(el));
+  const audioEl = elementStream<HTMLAudioElement, HTMLAudioElement | null>(
+    (el) => of(el),
+    null,
+  );
   const [currentTrack, setCurrentTrack] = createSignal<number | null>(null);
 
   const sub = observable(currentTrack)
@@ -177,23 +181,25 @@ export const App = () => {
       op.map((trackId) =>
         trackId === null ? null : `/api/tracks/${trackId}/play`,
       ),
-      op.withLatestFrom(audioEl$),
-      op.switchMap(async ([src, audioEl]) => {
+      op.withLatestFrom(audioEl.stream$),
+      op.switchMap(async ([src, el]) => {
         if (!src) {
-          if (audioEl.src) {
-            audioEl.pause();
-            audioEl.src = "";
+          if (el?.src) {
+            el.pause();
+            el.src = "";
           }
           return Promise.resolve();
         }
-        if (audioEl.src === src) {
+        if (el?.src === src) {
           return Promise.resolve();
         }
-        if (audioEl.src) {
-          audioEl.pause();
+        if (el?.src) {
+          el.pause();
         }
-        audioEl.src = src;
-        return audioEl.play();
+        if (el) {
+          el.src = src;
+          return el.play();
+        }
       }),
     )
     .subscribe({ error: (err) => console.error("Audio playback error:", err) });
@@ -208,19 +214,22 @@ export const App = () => {
           <Order
             value={order()}
             onChange={setOrder}
-            options={["artist", "album", "title", "score"]}
+            options={["artist", "album", "title", "length", "score", "added"]}
           />
         </div>
 
         <audio
-          ref={audioRef}
+          ref={audioEl.ref}
           class="absolute bottom-0 left-0 w-full"
           preload="metadata"
         />
 
         <div class="relative h-3/4 grow">
           <div class="absolute h-full w-full overflow-y-scroll">
-            <TrackList onDoubleClick={setCurrentTrack} tracks={tracks()} />
+            <TrackList
+              onPlay={(x) => setCurrentTrack(x.id)}
+              tracks={tracks()}
+            />
           </div>
         </div>
       </div>

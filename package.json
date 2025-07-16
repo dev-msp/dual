@@ -9,6 +9,7 @@
   "dependencies": {
     "@solidjs/meta": "^0.29.4",
     "drizzle-orm": "^0.44.2",
+    "music-metadata": "^11.7.0",
     "rxjs": "^7.8.2",
     "sharp": "^0.34.3",
     "solid-js": "^1.9.5",
@@ -29,6 +30,7 @@
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
     "eslint-import-resolver-typescript": "^4.2.1",
+    "eslint-plugin-drizzle": "^0.2.3",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-solid": "^0.14.5",
     "eslint-plugin-unused-imports": "^4.1.4",

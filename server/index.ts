@@ -1,26 +1,21 @@
+import type { Stats } from "node:fs";
+import { readdir } from "node:fs/promises";
+
+import type { BunFile } from "bun";
 import { eq } from "drizzle-orm";
+import * as rx from "rxjs";
 
 import { listTracks, optsFromRequest } from "./api";
-import { tasks$ } from "./api/task";
+import { type UnprocessedTask } from "./api/schemas";
+import { enqueueTask, taskEventsById, tasks$ } from "./api/task";
+import { TEMP_DIR } from "./api/worker";
 import { db, type Db } from "./db";
 import { items } from "./db/schema";
 
-// const jsonSchema: z.ZodType<Json> = z.json();
-
 tasks$.subscribe({
-  next: (task) => {
-    console.log("Task received:", task);
-    if (task.type === "load_art") {
-      console.log(task.payload.artPath);
-    }
-    // Here you can handle the task, e.g., process it or store it in a queue
-  },
-  error: (err) => {
-    console.error("Error in tasks stream:", err);
-  },
-  complete: () => {
-    console.log("Tasks stream completed");
-  },
+  next: (task) => console.log(task),
+  error: (err) => console.error("Error in tasks stream:", err),
+  complete: () => console.log("Tasks stream completed"),
 });
 
 const serveTrack = (
@@ -56,10 +51,61 @@ const serveTrack = (
   }
 };
 
+const reductionInit: { file?: BunFile; stats?: Stats; recentCtime: number } = {
+  recentCtime: 0,
+};
+
+const latestFileInDir = async (dir: string) => {
+  const fileNames = await readdir(dir);
+  const files = fileNames.map((name) => Bun.file(`${dir}/${name}`));
+
+  const { file: latest } = await files.reduce(async (frontrunner, nextFile) => {
+    const { ctimeMs: ctime } = await nextFile.stat();
+    return ctime > (await frontrunner).recentCtime
+      ? { file: nextFile, recentCtime: ctime }
+      : frontrunner;
+  }, Promise.resolve(reductionInit));
+
+  return latest;
+};
+
+const serveAlbumArt = async (
+  db: Db,
+  req: Bun.BunRequest<"/api/albums/:albumId/artwork">,
+) => {
+  // ensure it's already available
+  const task: UnprocessedTask = {
+    id: Bun.randomUUIDv7(),
+    type: "load_art",
+    payload: {
+      albumId: parseInt(req.params.albumId),
+    },
+  };
+  enqueueTask(task);
+  const outcome = await rx.firstValueFrom(taskEventsById(task.id));
+  if ("completed" in outcome) {
+    const dir = `${TEMP_DIR}/${req.params.albumId}`;
+    const recent = await latestFileInDir(dir);
+    if (!recent) {
+      return new Response("No album art found", { status: 404 });
+    }
+    if (recent.type !== "image/webp") {
+      return new Response("Album art is not in webp format", {
+        status: 415,
+      });
+    }
+    return new Response(recent);
+  }
+  return new Response(`Failed to load album art: ${outcome.error}`, {
+    status: 500,
+  });
+};
+
 Bun.serve({
   port: 5000,
   routes: {
     "/api/tracks": (req) => listTracks(db, optsFromRequest(req)),
     "/api/tracks/:trackId/play": (req) => serveTrack(db, req),
+    "/api/albums/:albumId/artwork": (req) => serveAlbumArt(db, req),
   },
 });

@@ -4,6 +4,7 @@ import {
   type Accessor,
   onCleanup,
   observable as solidObservable,
+  from as accessor,
 } from "solid-js";
 
 export { from as accessor } from "solid-js";
@@ -67,3 +68,16 @@ export const trailing = <T>(
       [] as T[],
     ),
   );
+export type AxObs<T, R = T> = Accessor<T> & { stream$: rx.Observable<R> };
+
+export const makeAccessible = <T>(
+  obs: rx.Observable<T>,
+  initialValue: T,
+): AxObs<T> => {
+  const ax: Accessor<T> = accessor(obs, initialValue);
+  const stream$ = obs.pipe(op.shareReplay(1));
+  Object.defineProperty(ax, "stream$", {
+    get: () => stream$,
+  });
+  return ax as AxObs<T>;
+};

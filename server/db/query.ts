@@ -1,5 +1,5 @@
 import { eq, getTableColumns, sql } from "drizzle-orm";
-import { QueryBuilder } from "drizzle-orm/sqlite-core";
+import { QueryBuilder, sqliteView } from "drizzle-orm/sqlite-core";
 
 import { itemAttributes, items } from "./schema";
 
@@ -22,3 +22,6 @@ export const itemsWithScore = (db: QueryBuilder) => {
     .from(items)
     .leftJoin(_scores, eq(items.id, _scores.itemId));
 };
+
+export const scoredItems = sqliteView("items_with_score").as(itemsWithScore);
+export type ScoredItem = typeof scoredItems.$inferSelect;

@@ -1,77 +1,127 @@
-import { EMPTY, from, Observable, of, Subject, timer } from "rxjs";
+import type { MaybePromise } from "bun";
+import { EMPTY, from, Observable, of, Subject } from "rxjs";
 import * as op from "rxjs/operators";
 import z from "zod/v4";
 
-import { randomItem } from "../db/item_queries";
-
 import {
-  type TaskResult,
-  type Json,
-  type JsonRecord,
+  payloadSchemaFromTask,
   taskSchema,
   type Task,
-} from "./schemas";
+  type UnprocessedTask,
+} from ".";
 
-export type WorkerEvent<
-  P extends JsonRecord = JsonRecord,
-  T extends Json = Json,
-> =
-  | { type: "start" }
-  | { type: "progress"; data?: P }
-  | ({ type: "complete" } & TaskResult<T>)
-  | { type: "error"; error: string; data?: P };
+export type Json =
+  | null
+  | boolean
+  | number
+  | string
+  | Json[]
+  | { [key: string]: Json };
+export type JsonRecord = Record<string, Json>;
+
+export type TaskResult<T extends Json = Json> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
+export interface TaskLike<T extends string, P extends JsonRecord> {
+  id: string;
+  type: T;
+  payload?: P;
+}
+
+export const handleTask = async (task: Task) => {
+  const schema = payloadSchemaFromTask(task);
+  if (!schema) {
+    console.error(`No schema found for task type: ${task.type}`);
+    throw new Error(`Unknown task type: ${task.type}`);
+  }
+  const meta = taskRegistry.get(schema);
+  if (!meta) {
+    throw new Error(`No handler registered for task type: ${task.type}`);
+  }
+
+  return meta.handler(task.payload);
+};
+
+export const identSchema = z
+  .string()
+  .refine(
+    (arg) => /^[a-z][a-z0-9_]*[a-z0-9]$/.test(arg),
+    "should be a valid identifier (e.g., 'foo_bar')",
+  );
+
+const taskPayloadSchema = z.record(z.string(), z.json()).optional();
+
+export const baseTaskSchema = z.object({
+  id: z.uuidv7(),
+  type: identSchema,
+  payload: taskPayloadSchema,
+});
+
+type PayloadSchema = typeof taskPayloadSchema;
+type Payload = z.infer<PayloadSchema>;
+
+type TaskMeta = {
+  handler: (task: Payload) => MaybePromise<void>;
+};
+
+const taskRegistry = z.registry<TaskMeta>();
+
+export const registerPayload = <P extends Task["payload"]>(
+  schema: z.ZodType<P>,
+  handler: (payload: P) => MaybePromise<void>,
+) => {
+  taskRegistry.add(schema, {
+    handler: async (payload) => handler(schema.parse(payload)),
+  });
+};
 
 const rawTasks$ = new Subject<unknown>();
 
-export const enqueueTask = (task: unknown) => {
+export const enqueueTask = (task: UnprocessedTask) => {
   rawTasks$.next(task);
 };
 
-export const tasks$: Observable<z.infer<typeof taskSchema>> = rawTasks$
-  .asObservable()
-  .pipe(
-    op.mergeMap(
-      (task): Observable<z.infer<typeof taskSchema>> =>
-        from(taskSchema.safeParseAsync(task)).pipe(
-          op.concatMap((parsed) => {
-            if (parsed.success) {
-              return of(parsed.data);
-            } else {
-              console.error("Invalid task:", parsed.error);
-              return EMPTY;
-            }
-          }),
-        ),
-    ),
-    op.tap({
-      next: (task) => {
-        console.log(`Received task: ${task.id} of type ${task.type}`);
-      },
-      error: (err) => {
-        console.error("Error processing task:", err);
-      },
+const skipInvalidTasks = (task: unknown) =>
+  from(taskSchema.safeParseAsync(task)).pipe(
+    op.concatMap((parsed) => {
+      if (parsed.success) {
+        return of(parsed.data);
+      } else {
+        console.error("Invalid task:", parsed.error);
+        return EMPTY;
+      }
     }),
   );
 
-timer(1e3)
-  .pipe(
-    op.repeat(4),
-    op.concatMap((): Observable<Task> => {
-      const randomId = randomItem()?.id;
-      if (!randomId) {
-        console.warn("No items found in the database.");
-        return EMPTY;
-      }
-      return of({
-        id: Bun.randomUUIDv7(),
-        type: "load_art",
-        payload: { trackId: randomId },
-      });
-    }),
-  )
-  .subscribe((t) => enqueueTask(t));
+export type TaskOutcome =
+  | { completed: string }
+  | { failed: string; error: string };
 
-export type Job<
-  P extends JsonRecord = JsonRecord,
-  T extends Record<string, Json> = Record<string, Json>,
-> = Observable<WorkerEvent<P, T>>;
+const execute = (task: Task) =>
+  handleTask(task)
+    .then(() => ({ completed: task.id }))
+    .catch((e) => ({
+      failed: task.id,
+      error: e instanceof Error ? e.message : String(e),
+    }));
+
+export const tasks$: Observable<TaskOutcome> = rawTasks$.asObservable().pipe(
+  op.concatMap(skipInvalidTasks),
+  op.mergeMap(execute, 8),
+  op.tap({
+    error: (err) => {
+      console.error("Error processing task:", err);
+    },
+  }),
+  op.share(),
+);
+
+export const taskEventsById = (taskId: string): Observable<TaskOutcome> =>
+  tasks$.pipe(
+    op.filter((outcome) =>
+      "completed" in outcome
+        ? outcome.completed === taskId
+        : outcome.failed === taskId,
+    ),
+  );

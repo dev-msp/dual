@@ -1,12 +1,14 @@
 import { asc, desc } from "drizzle-orm";
 import * as sqlCore from "drizzle-orm/sqlite-core";
+import z from "zod/v4";
 
 import { type Db } from "../db";
 import { artMapping } from "../db/album_queries";
-import { itemsWithScore } from "../db/query";
+import { itemsWithScore, scoredItems } from "../db/query";
 import { items } from "../db/schema";
 
-const scoredItems = sqlCore.sqliteView("items_with_score").as(itemsWithScore);
+import { baseTaskSchema } from "./task";
+import { loadArtSchema } from "./worker";
 
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
@@ -107,3 +109,16 @@ export const listTracks = (db: Db, opts?: Options) => {
     }));
   return serveJson(data);
 };
+
+const taskUnion = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("load_art"), payload: loadArtSchema }),
+]);
+
+export const payloadSchemaFromTask = (task: Task) =>
+  taskUnion.def.options.find((o) => {
+    return o.def.shape.type.def.values[0] === task.type;
+  })?.def.shape.payload;
+export const taskSchema = baseTaskSchema.and(taskUnion);
+
+export type UnprocessedTask = z.input<typeof taskSchema>;
+export type Task = z.infer<typeof taskSchema>;

@@ -5,6 +5,7 @@ import { fixupPluginRules } from "@eslint/compat";
 import { FlatCompat } from "@eslint/eslintrc";
 import eslintJs from "@eslint/js";
 import prettier from "eslint-config-prettier";
+import drizzle from "eslint-plugin-drizzle";
 import unusedPlugin from "eslint-plugin-unused-imports";
 import globals from "globals";
 import tseslint from "typescript-eslint";
@@ -52,8 +53,10 @@ export default [
     plugins: {
       import: legacyPlugin("eslint-plugin-import", "import"),
       unused: unusedPlugin,
+      drizzle,
     },
     rules: {
+      ...drizzle.configs.recommended.rules,
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": 0,
       "import/order": [

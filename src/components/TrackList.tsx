@@ -1,160 +1,134 @@
-import {
-  createContext,
-  createSignal,
-  For,
-  onMount,
-  useContext,
-  type JSX,
-} from "solid-js";
-import { z } from "zod/v4";
+import { createMemo, Show } from "solid-js";
 
-export type Track = z.infer<typeof trackSchema>;
+import { type Track } from "../schemas/track";
 
-export const trackSchema = z.object({
-  id: z.number(),
-  album_id: z.number().nullable(),
-  disc: z.number().nullable(),
-  track: z.number().nullable(),
-  original_year: z.number().nullable(),
-  original_month: z.number().nullable(),
-  original_day: z.number().nullable(),
-  title: z.string(),
-  artPath: z.string().nullable(),
-  artist: z.string().nullable(),
-  artist_sort: z.string().nullable(),
-  album: z.string(),
-  albumartist: z.string().nullable(),
-  albumartist_sort: z.string().nullable(),
-  score: z.number().nullable(),
-});
+import { DataTable } from "./DataTable";
+import { type ColumnDefs } from "./DataTable/types";
 
-const Title = (props: { children: JSX.Element[] | JSX.Element }) => (
-  <div data-title class="overflow-hidden text-lg text-nowrap overflow-ellipsis">
-    {props.children}
-  </div>
-);
+// factory function to create column definitions for tracks
+const createTrackColumns = <Keys extends keyof Track>(
+  tracks: Track[],
+  order: Keys,
+): ColumnDefs<Track, Keys, never> => {
+  const noWrapClass = "overflow-hidden text-left overflow-ellipsis";
 
-const DataRow = (props: {
-  index: number;
-  header?: boolean;
-  children: JSX.Element[];
-}) => {
-  return (
-    <div
-      data-row
-      data-row-index={props.index}
-      data-header-row={props.header ?? false}
-      class="contents"
-    >
-      {props.children}
-    </div>
-  );
-};
-
-const RowContext = createContext<{ rowIndex: number }>();
-
-const DataCell = (props: {
-  index: number;
-  children: JSX.Element[] | JSX.Element;
-  class?: string;
-  classList?: Record<string, boolean>;
-}) => {
-  const context = useContext(RowContext);
-  if (!context) {
-    throw new Error("DataCell must be used within a RowContext");
-  }
-  return (
-    <div
-      data-cell
-      data-row-index={context.rowIndex}
-      data-col-index={props.index}
-      class={`flex items-center ${props.class}`}
-      classList={props.classList}
-      style={{ "grid-column": props.index + 1 }}
-    >
-      {props.children}
-    </div>
-  );
+  return {
+    order,
+    fields: {
+      id: {
+        accessorKey: "id", // Using id as accessor, but rendering absoluteRowIndex
+        hide: true,
+        header: "#",
+        size: "min-content",
+        cell: ({ absoluteRowIndex }) => <span>{absoluteRowIndex + 1}</span>,
+      },
+      album_id: {
+        accessorKey: "album_id",
+        header: "",
+        size: "70px",
+        cell: (props) => (
+          <Show when={props.value}>
+            <img
+              style={{ width: "70px", height: "70px" }}
+              src={`/api/albums/${props.value}/artwork`}
+            />
+          </Show>
+        ),
+      },
+      disc: {
+        accessorKey: "disc",
+        header: "Disc",
+        size: "min-content",
+        cell: (props) => <span class={noWrapClass}>{props.value || ""}</span>,
+      },
+      track: {
+        accessorKey: "track",
+        header: "Track",
+        size: "min-content",
+        cell: (props) => <span class={noWrapClass}>{props.value || ""}</span>,
+      },
+      title: {
+        accessorKey: "title",
+        header: "Title",
+        size: "2fr",
+        cell: (props) => (
+          <div class={`text-lg font-bold ${noWrapClass}`}>{props.value}</div>
+        ),
+      },
+      length: {
+        accessorKey: "length",
+        header: "Duration",
+        cell: (props) => {
+          const duration = props.value;
+          const minutes = Math.floor(duration / 60);
+          const seconds = Math.floor(duration % 60);
+          return (
+            <span>{`${minutes}:${seconds.toString().padStart(2, "0")}`}</span>
+          );
+        },
+      },
+      albumartist: {
+        accessorKey: "albumartist",
+        header: "Album artist",
+        size: "1fr",
+        cell: (props) => <span class={noWrapClass}>{props.value ?? "-"}</span>,
+      },
+      album: {
+        accessorKey: "album",
+        header: "Album",
+        size: "1fr",
+        cell: (props) => <span class={noWrapClass}>{props.value ?? "-"}</span>,
+      },
+      original_year: {
+        accessorKey: "original_year",
+        header: "Year",
+        size: "1fr",
+        cell: (props) => <span class={noWrapClass}>{props.value || ""}</span>,
+      },
+      score: {
+        accessorKey: "score",
+        hide: true,
+        header: "Score",
+        size: "1fr",
+        cell: (props) => (
+          <span class="text-left">
+            {props.value !== null ? props.value.toFixed(2) : "-"}
+          </span>
+        ),
+      },
+    },
+  };
 };
 
 export const TrackList = (props: {
+  onPlay: (track: Track) => void;
   tracks: Track[];
-  onDoubleClick: (id: number) => void;
 }) => {
-  const [el, ref] = createSignal<HTMLDivElement>();
-  onMount(() => {
-    el()?.focus();
-  });
+  // Memoize column definitions, re-creating only when tracks change
+  const columns = createMemo(() =>
+    createTrackColumns(props.tracks, [
+      "id",
+      "album_id",
+      "disc",
+      "track",
+      "title",
+      "length",
+      "original_year",
+      "albumartist",
+      "album",
+      "score",
+    ]),
+  );
+
   return (
-    <div
-      ref={ref}
-      class="relative grid h-full gap-3 **:data-title:font-bold"
-      style={{
-        "grid-template-rows": `repeat(minmax(40px, auto))`,
-        "grid-template-columns": "min-content minmax(300px,2fr) repeat(3,1fr)",
+    <DataTable
+      onRowDblClick={(row: Track) => {
+        // Handle double-click on row (e.g. play track)
+        console.log(`Double-clicked track: ${row.title} by ${row.artist}`);
+        props.onPlay(row);
       }}
-    >
-      <div class="sticky top-0 col-span-full grid h-min grid-cols-subgrid bg-gray-900">
-        <RowContext.Provider value={{ rowIndex: 0 }}>
-          <DataCell index={0}>
-            <Title>#</Title>
-          </DataCell>
-          <DataCell index={1}>
-            <Title>Title</Title>
-          </DataCell>
-          <DataCell index={2} class="text-left">
-            <Title>Artist</Title>
-          </DataCell>
-          <DataCell index={3} class="text-left">
-            <Title>Album</Title>
-          </DataCell>
-          <DataCell index={4} class="text-left">
-            <Title>Score</Title>
-          </DataCell>
-        </RowContext.Provider>
-      </div>
-
-      <div class="sticky top-0 col-span-full row-start-2 -mt-2 h-[0.5px] bg-gray-700" />
-
-      <For each={props.tracks}>
-        {(track, i) => (
-          <>
-            <div
-              data-row
-              data-row-index={i()}
-              onDblClick={() => {
-                props.onDoubleClick(track.id);
-              }}
-              class="contents"
-            >
-              <RowContext.Provider value={{ rowIndex: i() }}>
-                <DataCell
-                  index={0}
-                  class="flex items-center justify-center text-xs"
-                >
-                  {i()}
-                </DataCell>
-                <DataCell
-                  index={1}
-                  class="overflow-hidden text-nowrap overflow-ellipsis"
-                >
-                  <span>{track.title}</span>
-                </DataCell>
-                <DataCell index={2} class="text-left">
-                  {track.artist ?? "Unknown Artist"}
-                </DataCell>
-                <DataCell index={3} class="text-left">
-                  {track.album ?? "Unknown Album"}
-                </DataCell>
-                <DataCell index={4} class="text-left font-mono">
-                  {track.score ?? "-"}
-                </DataCell>
-              </RowContext.Provider>
-            </div>
-            <div class="col-span-full h-[0.5px] bg-gray-700" />
-          </>
-        )}
-      </For>
-    </div>
+      data={props.tracks}
+      columns={columns()}
+    />
   );
 };
