@@ -40,7 +40,7 @@ type Options = {
 };
 
 const defaultOptions: Required<Options> = {
-  limit: 100,
+  limit: 10000,
   offset: 0,
   order: [{ field: "id", direction: "asc" }],
 };

@@ -16,6 +16,10 @@ body {
   color: var(--fg);
 }
 
+#root {
+  height: 100vh;
+}
+
 main {
   padding: 1rem; /* Instead of @apply p-4 */
   display: flex;

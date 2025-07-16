@@ -1,91 +1,17 @@
 import "./app.css";
 
 import { MetaProvider } from "@solidjs/meta";
-import { createEffect, createResource, createSignal, For } from "solid-js";
+import { of } from "rxjs";
+import * as op from "rxjs/operators";
+import { createResource, createSignal, onCleanup } from "solid-js";
+import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
 import type { Ordering } from "../server/api";
 
-type Track = z.infer<typeof trackSchema>;
-
-const trackSchema = z.object({
-  id: z.number(),
-  album_id: z.number().nullable(),
-  disc: z.number().nullable(),
-  track: z.number().nullable(),
-  original_year: z.number().nullable(),
-  original_month: z.number().nullable(),
-  original_day: z.number().nullable(),
-  title: z.string(),
-  artPath: z.string().nullable(),
-  artist: z.string().nullable(),
-  artist_sort: z.string().nullable(),
-  album: z.string(),
-  albumartist: z.string().nullable(),
-  albumartist_sort: z.string().nullable(),
-  score: z.number().nullable(),
-});
-
-const TrackList = (props: { tracks: Track[] }) => {
-  const minScore = () =>
-    Math.min(...props.tracks.map((track) => track.score ?? Infinity));
-  const maxScore = () =>
-    Math.max(...props.tracks.map((track) => track.score ?? 0));
-
-  const scoreRangeToWidth = (score: number, maxWidth: number = 100) => {
-    if (score === null || score === undefined) return "0px";
-    const range = maxScore() - minScore();
-    if (range === 0) return "0%";
-    const width = ((score - minScore()) / range) * 100;
-    return `${Math.min(width, maxWidth)}%`;
-  };
-
-  return (
-    <div class="grid grid-flow-row grid-cols-4 gap-2 **:data-title:font-bold">
-      <div data-header-row data-row class="contents">
-        <div
-          data-title
-          class="overflow-hidden text-lg text-nowrap overflow-ellipsis"
-        >
-          Title
-        </div>
-        <div data-title>Artist</div>
-        <div data-title>Album</div>
-        <div>
-          <span data-title>Score</span>
-          <div class="flex justify-between *:text-xs">
-            <span>{minScore()}</span>
-            <span>{maxScore()}</span>
-          </div>
-        </div>
-      </div>
-      <For each={props.tracks}>
-        {(track, i) => (
-          <div data-row data-row-index={i()} class="contents">
-            <div
-              data-row-index={i()}
-              class="overflow-hidden text-lg font-bold text-nowrap overflow-ellipsis"
-            >
-              {track.title}
-            </div>
-            <div data-row-index={i()}>
-              <span> {track.albumartist} </span>
-            </div>
-            <div data-row-index={i()}>{track.album}</div>
-            <div data-row-index={i()}>
-              <div
-                class="h-4 rounded bg-gray-200"
-                style={{ width: scoreRangeToWidth(track.score ?? 0, 90) }}
-              >
-                <div class="h-full rounded bg-blue-500" />
-              </div>
-            </div>
-          </div>
-        )}
-      </For>
-    </div>
-  );
-};
+import { TrackList, trackSchema, type Track } from "./components/TrackList";
+import { observable } from "./lib/reactive";
+import { elementStream } from "./lib/reactive/dom";
 
 type OrderProps = {
   value: Ordering[];
@@ -119,43 +45,138 @@ const Order = (props: OrderProps) => {
   );
 };
 
+const trackIdSchema = z.number().positive();
+type PlaybackEvent = z.infer<typeof playbackEventSchema>;
+const playbackEventSchema = z.discriminatedUnion("type", [
+  z.object({
+    type: "PLAY",
+    trackId: trackIdSchema,
+  }),
+  z.object({
+    type: "PLAY_PAUSE",
+  }),
+  z.object({
+    type: "CLEAR_QUEUE",
+  }),
+  z.object({
+    type: "ENQUEUE_NEXT",
+    trackIds: z.array(trackIdSchema),
+  }),
+  z.object({
+    type: "ENQUEUE_END",
+    trackIds: z.array(trackIdSchema),
+  }),
+]);
+
+const Controls = () => {
+  return (
+    <div class="flex items-center gap-2">
+      <button
+        class="border p-1"
+        onClick={() => {
+          // Handle play/pause logic
+        }}
+      >
+        Play/Pause
+      </button>
+      <button
+        class="border p-1"
+        onClick={() => {
+          // Handle clear queue logic
+        }}
+      >
+        Clear Queue
+      </button>
+      <button
+        class="border p-1"
+        onClick={() => {
+          // Handle enqueue next logic
+        }}
+      >
+        Enqueue Next
+      </button>
+      <button
+        class="border p-1"
+        onClick={() => {
+          // Handle enqueue end logic
+        }}
+      >
+        Enqueue End
+      </button>
+    </div>
+  );
+};
+
+type ListState = {
+  tracks: Track[];
+  selection: { [trackId: number]: boolean };
+  loading: boolean;
+  error: Error | null;
+};
+
+const [trackList, setTrackList] = createStore<ListState>({
+  tracks: [],
+  selection: {},
+  loading: false,
+  error: null,
+});
+
 export const App = () => {
   const [order, setOrder] = createSignal<Ordering[]>([
     { field: "score", direction: "desc" },
   ]);
-  createEffect(() => {
-    console.log(JSON.stringify(order()));
+
+  createResource(order, async (ord) => {
+    const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
+    const resp = await fetch(`/api/tracks?order=${orderParam}`, {
+      headers: { Accept: "application/json" },
+    });
+    try {
+      setTrackList("tracks", z.array(trackSchema).parse(await resp.json()));
+    } catch (e) {
+      if (e instanceof z.ZodError) {
+        console.error("Validation error:", e.issues);
+      }
+      throw e;
+    }
   });
 
-  const [tracks] = createResource(
-    order,
-    async (ord) => {
-      const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
-      const resp = await fetch(`/api/tracks?order=${orderParam}&limit=400`, {
-        headers: {
-          Accept: "application/json",
-        },
-      });
-      try {
-        return z.array(trackSchema).parse(await resp.json());
-      } catch (e) {
-        if (e instanceof z.ZodError) {
-          console.error("Validation error:", e.issues);
+  const [audioEl$, audioRef] = elementStream<HTMLAudioElement>((el) => of(el));
+  const [currentTrack, setCurrentTrack] = createSignal<number | null>(null);
+
+  const sub = observable(currentTrack)
+    .pipe(
+      op.map((trackId) =>
+        trackId === null ? null : `/api/tracks/${trackId}/play`,
+      ),
+      op.withLatestFrom(audioEl$),
+      op.switchMap(async ([src, audioEl]) => {
+        if (!src) {
+          if (audioEl.src) {
+            audioEl.pause();
+            audioEl.src = "";
+          }
+          return Promise.resolve();
         }
-        throw e;
-      }
-    },
-    { initialValue: [] },
-  );
+        if (audioEl.src === src) {
+          return Promise.resolve();
+        }
+        if (audioEl.src) {
+          audioEl.pause();
+        }
+        audioEl.src = src;
+        return audioEl.play();
+      }),
+    )
+    .subscribe({ error: (err) => console.error("Audio playback error:", err) });
+
+  onCleanup(() => sub.unsubscribe());
 
   return (
     <MetaProvider>
-      <div class="flex min-h-full flex-col p-4">
-        <header class="flex items-center justify-between">
-          <div class="text-4xl font-bold">Title</div>
-        </header>
-
-        <div class="flex items-start p-4">
+      <div class="absolute top-0 left-0 flex h-full w-full flex-col p-4">
+        <div class="flex flex-row items-start p-4">
+          <Controls />
           <Order
             value={order()}
             onChange={setOrder}
@@ -163,11 +184,20 @@ export const App = () => {
           />
         </div>
 
-        <TrackList tracks={tracks()} />
+        <audio
+          ref={audioRef}
+          class="absolute bottom-0 left-0 w-full"
+          preload="metadata"
+        />
 
-        <footer class="flex justify-center p-4 text-xs">
-          <p>© 2025</p>
-        </footer>
+        <div class="relative h-3/4 grow">
+          <div class="absolute h-full w-full overflow-y-scroll">
+            <TrackList
+              onDoubleClick={setCurrentTrack}
+              tracks={trackList.tracks}
+            />
+          </div>
+        </div>
       </div>
     </MetaProvider>
   );
