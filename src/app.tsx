@@ -3,7 +3,13 @@ import "./app.css";
 import { MetaProvider } from "@solidjs/meta";
 import { of } from "rxjs";
 import * as op from "rxjs/operators";
-import { createResource, createSignal, onCleanup } from "solid-js";
+import {
+  createEffect,
+  createMemo,
+  createResource,
+  createSignal,
+  onCleanup,
+} from "solid-js";
 import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
@@ -108,37 +114,59 @@ const Controls = () => {
 };
 
 type ListState = {
-  tracks: Track[];
+  tracks: { [trackId: number]: Track };
+  listing: number[];
   selection: { [trackId: number]: boolean };
   loading: boolean;
   error: Error | null;
 };
 
 const [trackList, setTrackList] = createStore<ListState>({
-  tracks: [],
+  tracks: {},
+  listing: [],
   selection: {},
   loading: false,
   error: null,
 });
 
+const tracks = createMemo(() =>
+  trackList.listing.map((id) => trackList.tracks[id]),
+);
+
 export const App = () => {
   const [order, setOrder] = createSignal<Ordering[]>([
-    { field: "score", direction: "desc" },
+    { field: "albumartist", direction: "desc" },
   ]);
 
-  createResource(order, async (ord) => {
-    const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
-    const resp = await fetch(`/api/tracks?order=${orderParam}`, {
-      headers: { Accept: "application/json" },
-    });
-    try {
-      setTrackList("tracks", z.array(trackSchema).parse(await resp.json()));
-    } catch (e) {
-      if (e instanceof z.ZodError) {
-        console.error("Validation error:", e.issues);
+  const [tracksFromDb] = createResource(
+    order,
+    async (ord) => {
+      const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
+      const resp = await fetch(`/api/tracks?order=${orderParam}&limit=100`, {
+        headers: { Accept: "application/json" },
+      });
+      try {
+        return z.array(trackSchema).parse(await resp.json());
+      } catch (e) {
+        if (e instanceof z.ZodError) {
+          console.error("Validation error:", e.issues);
+        }
+        throw e;
       }
-      throw e;
-    }
+    },
+    { initialValue: [] },
+  );
+
+  createEffect(() => {
+    const fetched = tracksFromDb();
+    setTrackList(
+      "listing",
+      fetched.map((x) => x.id),
+    );
+    setTrackList(
+      "tracks",
+      Object.fromEntries(fetched.map((track) => [track.id, track])),
+    );
   });
 
   const [audioEl$, audioRef] = elementStream<HTMLAudioElement>((el) => of(el));
@@ -192,10 +220,7 @@ export const App = () => {
 
         <div class="relative h-3/4 grow">
           <div class="absolute h-full w-full overflow-y-scroll">
-            <TrackList
-              onDoubleClick={setCurrentTrack}
-              tracks={trackList.tracks}
-            />
+            <TrackList onDoubleClick={setCurrentTrack} tracks={tracks()} />
           </div>
         </div>
       </div>

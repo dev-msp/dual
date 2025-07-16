@@ -1,6 +1,5 @@
 import {
   createContext,
-  createMemo,
   createSignal,
   For,
   onMount,
@@ -34,9 +33,6 @@ const Title = (props: { children: JSX.Element[] | JSX.Element }) => (
     {props.children}
   </div>
 );
-
-const clamp = (n: number, min: number, max: number) =>
-  Math.min(Math.max(n, min), max);
 
 const DataRow = (props: {
   index: number;
@@ -85,93 +81,20 @@ export const TrackList = (props: {
   tracks: Track[];
   onDoubleClick: (id: number) => void;
 }) => {
-  const minScore = () =>
-    props.tracks.reduce(
-      (min, track) => Math.min(min, track.score ?? Infinity),
-      Infinity,
-    );
-
-  const maxScore = () =>
-    props.tracks.reduce((max, track) => Math.max(max, track.score ?? 0), 0);
-
-  const scoreRangeToWidth = (score: number, maxWidth: number = 100) => {
-    if (score === null || score === undefined) return "0px";
-    const range = maxScore() - minScore();
-    if (range === 0) return "0%";
-    const width = ((score - minScore()) / range) * 100;
-    return `${Math.min(width, maxWidth)}%`;
-  };
-
-  const [el, scrollBox] = createSignal<HTMLDivElement | null>(null);
-
-  const throttle = <T extends (...args: any[]) => void>(
-    fn: T,
-    delay: number,
-  ) => {
-    let timeout: ReturnType<typeof setTimeout> | null = null;
-    return (...args: Parameters<T>) => {
-      if (timeout) return;
-      timeout = setTimeout(() => {
-        fn(...args);
-        timeout = null;
-      }, delay);
-    };
-  };
-
-  const trackCount = createMemo(() => {
-    return props.tracks.length;
-  });
-
-  const maxRows = () => {
-    const box = el();
-    if (!box) return 0;
-    return Math.floor(box.clientHeight / 40); // Assuming each row is 40px tall
-  };
-
-  const [scrolled, setScrolled] = createSignal(0);
-  const handleWheel = (e: WheelEvent) => {
-    const delta = Math.floor(e.deltaY / 1.6);
-    requestAnimationFrame(() => {
-      setScrolled((n) => {
-        const newScroll = n + delta;
-        const scrollMax = trackCount() - maxRows();
-        return clamp(newScroll, 0, scrollMax);
-      });
-    });
-  };
-
-  const throttledHandleWheel = throttle(handleWheel, 17);
-
+  const [el, ref] = createSignal<HTMLDivElement>();
   onMount(() => {
-    el()?.addEventListener("wheel", throttledHandleWheel, { passive: true });
+    el()?.focus();
   });
-
-  const rowRange = () => {
-    const box = el();
-    const n = trackCount();
-    if (!box) return { start: 0, end: 1 };
-
-    const start = clamp(Math.floor(scrolled()), 0, n - maxRows() + 1);
-    const end = clamp(start + maxRows() - 1, start, n - 1);
-
-    return { start, end };
-  };
-
-  const rows = () => {
-    const { start, end } = rowRange();
-    return props.tracks.slice(start, end + 1);
-  };
-
   return (
     <div
-      class="relative grid h-full gap-3 overflow-y-hidden **:data-title:font-bold"
-      ref={scrollBox}
+      ref={ref}
+      class="relative grid h-full gap-3 **:data-title:font-bold"
       style={{
         "grid-template-rows": `repeat(minmax(40px, auto))`,
         "grid-template-columns": "min-content minmax(300px,2fr) repeat(3,1fr)",
       }}
     >
-      <div class="sticky col-span-full grid h-min grid-cols-subgrid">
+      <div class="sticky top-0 col-span-full grid h-min grid-cols-subgrid bg-gray-900">
         <RowContext.Provider value={{ rowIndex: 0 }}>
           <DataCell index={0}>
             <Title>#</Title>
@@ -191,50 +114,45 @@ export const TrackList = (props: {
         </RowContext.Provider>
       </div>
 
-      <div class="relative col-span-full row-start-2 -mt-2 h-[0.5px] bg-gray-700" />
+      <div class="sticky top-0 col-span-full row-start-2 -mt-2 h-[0.5px] bg-gray-700" />
 
-      <For each={rows()}>
+      <For each={props.tracks}>
         {(track, i) => (
-          <div
-            data-row
-            data-row-index={i()}
-            onDblClick={() => {
-              console.log("hi");
-              props.onDoubleClick(track.id);
-            }}
-            class="contents"
-          >
-            <RowContext.Provider value={{ rowIndex: i() }}>
-              <DataCell
-                index={0}
-                class="flex items-center justify-center text-xs"
-              >
-                {scrolled() + i()}
-              </DataCell>
-              <DataCell
-                index={1}
-                class="overflow-hidden text-nowrap overflow-ellipsis"
-              >
-                <span>{track.title}</span>
-              </DataCell>
-              <DataCell index={2} class="text-left">
-                {track.artist ?? "Unknown Artist"}
-              </DataCell>
-              <DataCell index={3} class="text-left">
-                {track.album ?? "Unknown Album"}
-              </DataCell>
-              <DataCell index={4} class="text-left">
-                <div
-                  class="h-4 rounded bg-gray-200"
-                  style={{ width: scoreRangeToWidth(track.score ?? 0) }}
+          <>
+            <div
+              data-row
+              data-row-index={i()}
+              onDblClick={() => {
+                props.onDoubleClick(track.id);
+              }}
+              class="contents"
+            >
+              <RowContext.Provider value={{ rowIndex: i() }}>
+                <DataCell
+                  index={0}
+                  class="flex items-center justify-center text-xs"
                 >
-                  <div class="flex h-full flex-row items-center justify-end rounded bg-blue-500">
-                    {track.score?.toFixed(2)}
-                  </div>
-                </div>
-              </DataCell>
-            </RowContext.Provider>
-          </div>
+                  {i()}
+                </DataCell>
+                <DataCell
+                  index={1}
+                  class="overflow-hidden text-nowrap overflow-ellipsis"
+                >
+                  <span>{track.title}</span>
+                </DataCell>
+                <DataCell index={2} class="text-left">
+                  {track.artist ?? "Unknown Artist"}
+                </DataCell>
+                <DataCell index={3} class="text-left">
+                  {track.album ?? "Unknown Album"}
+                </DataCell>
+                <DataCell index={4} class="text-left font-mono">
+                  {track.score ?? "-"}
+                </DataCell>
+              </RowContext.Provider>
+            </div>
+            <div class="col-span-full h-[0.5px] bg-gray-700" />
+          </>
         )}
       </For>
     </div>
