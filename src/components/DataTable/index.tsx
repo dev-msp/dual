@@ -74,24 +74,21 @@ const combineRefs =
 export const DataTable = <
   T extends Record<string, any>,
   K extends keyof T,
-  R extends { [k: string]: unknown },
 >(props: {
   data: T[];
   onRowDblClick: (item: T) => void;
-  columns: ColumnDefs<T, K, R>;
+  columns: ColumnDefs<T, K>;
 }) => {
   const orderedColumns = createMemo(() =>
     props.columns.order
       .reduce(
         (xs, x) => {
           if (x in props.columns.fields) {
-            xs.push({ ...props.columns.fields[x as K], accessorKey: x });
-          } else if (x in props.columns.customFields) {
-            xs.push({ ...props.columns.customFields[x as keyof R] });
+            xs.push({ ...props.columns.fields[x], accessorKey: x });
           }
           return xs;
         },
-        [] as FieldsTypes<typeof props.columns, T, K, R>[],
+        [] as FieldsTypes<typeof props.columns, T, K>[],
       )
       .filter((c) => !!c),
   );
@@ -189,7 +186,7 @@ export const DataTable = <
                 {(column, j) => (
                   <Show when={!column.hide}>
                     {(_) => {
-                      const context: KeyedCellContext<T, keyof T> = {
+                      const context: KeyedCellContext<T, K> = {
                         row,
                         value: row[column.accessorKey],
                         absoluteRowIndex: scrolled() + i(),

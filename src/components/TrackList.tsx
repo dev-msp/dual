@@ -8,12 +8,12 @@ import { type ColumnDefs } from "./DataTable/types";
 // factory function to create column definitions for tracks
 const createTrackColumns = <Keys extends keyof Track>(
   tracks: Track[],
-  order: Keys,
-): ColumnDefs<Track, Keys, never> => {
+  order: Keys[],
+): ColumnDefs<Track, Keys> => {
   const noWrapClass = "overflow-hidden text-left overflow-ellipsis";
 
   return {
-    order,
+    order: order,
     fields: {
       id: {
         accessorKey: "id", // Using id as accessor, but rendering absoluteRowIndex

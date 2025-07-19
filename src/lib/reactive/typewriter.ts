@@ -3,8 +3,8 @@ import {
   Observable,
   animationFrameScheduler,
   EMPTY,
-  MonoTypeOperatorFunction,
-  OperatorFunction,
+  type MonoTypeOperatorFunction,
+  type OperatorFunction,
 } from "rxjs";
 import * as op from "rxjs/operators";
 

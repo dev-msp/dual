@@ -1,10 +1,10 @@
 import {
-  SchedulerLike,
+  type SchedulerLike,
   animationFrameScheduler,
   Observable,
   defer,
   interval as rxInterval,
-  ObservedValueOf,
+  type ObservedValueOf,
 } from "rxjs";
 import * as op from "rxjs/operators";
 
