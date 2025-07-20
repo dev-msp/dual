@@ -7,7 +7,8 @@ import { DataTable } from "./DataTable";
 import { type ColumnDefs } from "./DataTable/types";
 
 const NoWrap = propsOverride("div", {
-  class: "overflow-hidden text-left overflow-ellipsis whitespace-nowrap",
+  class:
+    "overflow-hidden py-[3px] text-left overflow-ellipsis whitespace-nowrap",
 });
 
 // factory function to create column definitions for tracks
@@ -19,7 +20,6 @@ const createTrackColumns = <Keys extends keyof Track>(
     order: order,
     fields: {
       id: {
-        hide: true,
         accessorKey: "id", // Using id as accessor, but rendering absoluteRowIndex
         header: "#",
         size: "min-content",
@@ -32,8 +32,9 @@ const createTrackColumns = <Keys extends keyof Track>(
       //   header: "",
       //   size: "70px",
       //   cell: (props) => (
-      //     <Show when={props.value}>
+      //     <Show when={props.value} fallback={<span />}>
       //       <img
+      //         class="my-2"
       //         style={{ width: "70px", height: "70px" }}
       //         src={`/api/albums/${props.value}/artwork`}
       //       />
@@ -117,9 +118,9 @@ export const TrackList = (props: {
       "track",
       "title",
       "length",
-      "original_year",
       "albumartist",
       "album",
+      "original_year",
       "score",
     ]),
   );

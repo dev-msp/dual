@@ -17,7 +17,16 @@ tasks$.subscribe({
   complete: () => console.log("Tasks stream completed"),
 });
 
-const serveTrack = (
+const trackPathById = (db: Db, trackId: number): string | undefined => {
+  const track = db
+    .select({ path: items.path })
+    .from(items)
+    .where(eq(items.id, trackId))
+    .get();
+  return track?.path ? new TextDecoder("utf-8").decode(track?.path) : undefined;
+};
+
+const serveTrack = async (
   db: Db,
   req: Bun.BunRequest<"/api/tracks/:trackId/play">,
 ) => {
@@ -30,20 +39,19 @@ const serveTrack = (
   if (trackId <= 0 || isNaN(trackId)) {
     return new Response("Invalid Track ID", { status: 400 });
   }
+
   try {
-    const track = db
-      .select({ path: items.path })
-      .from(items)
-      .where(eq(items.id, trackId))
-      .get();
-    if (!track) {
-      return new Response("Track not found", { status: 404 });
+    const trackPath = trackPathById(db, trackId);
+    if (!trackPath) {
+      return new Response("Track path not found", { status: 404 });
     }
 
-    if (!track.path) {
-      return new Response("Track path is empty", { status: 404 });
+    const file = Bun.file(trackPath);
+    if (!(await file.exists())) {
+      return new Response("Track file not found", { status: 404 });
     }
-    return new Response(Bun.file(track.path));
+
+    return new Response(file);
   } catch (error) {
     console.error("Error serving track:", error);
     return new Response("Internal Server Error", { status: 500 });

@@ -10,7 +10,7 @@ import {
   createSignal,
   onCleanup,
 } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, produce } from "solid-js/store";
 import { z } from "zod/v4";
 
 import type { Ordering } from "../server/api";
@@ -18,39 +18,8 @@ import type { Ordering } from "../server/api";
 import { TrackList } from "./components/TrackList";
 import { observable } from "./lib/reactive";
 import { elementStream } from "./lib/reactive/dom";
+import { changeOrder, Order } from "./Order";
 import { trackSchema, type Track } from "./schemas/track";
-
-type OrderProps = {
-  value: Ordering[];
-  onChange: (order: Ordering[]) => void;
-  options: Ordering["field"][];
-};
-
-const Order = (props: OrderProps) => {
-  return (
-    <div class="flex items-start gap-2">
-      <label for="order">Order by:</label>
-      <select
-        id="order"
-        class="border p-1"
-        multiple
-        value={props.value.map((o) => o.field)}
-        onChange={(e) => {
-          const selectedOptions = Array.from(
-            e.currentTarget.selectedOptions,
-          ).map((option) => option.value as Ordering["field"]);
-          props.onChange(
-            selectedOptions.map((field) => ({ field, direction: "desc" })),
-          );
-        }}
-      >
-        {props.options.map((option) => (
-          <option value={option}>{option}</option>
-        ))}
-      </select>
-    </div>
-  );
-};
 
 const trackIdSchema = z.number().positive();
 type PlaybackEvent = z.infer<typeof playbackEventSchema>;
@@ -80,6 +49,7 @@ type ListState = {
   listing: number[];
   selection: { [trackId: number]: boolean };
   loading: boolean;
+  order: Ordering[];
   error: Error | null;
 };
 
@@ -87,21 +57,32 @@ const [trackList, setTrackList] = createStore<ListState>({
   tracks: {},
   listing: [],
   selection: {},
+  order: [
+    { field: "albumartist", direction: "asc" },
+    { field: "original_year", direction: "desc" },
+    { field: "disc", direction: "asc" },
+    { field: "track", direction: "asc" },
+  ],
   loading: false,
   error: null,
 });
 
 export const App = () => {
-  const [order, setOrder] = createSignal<Ordering[]>([
-    { field: "albumartist", direction: "desc" },
-  ]);
-
   const tracks = createMemo(() =>
     trackList.listing.map((id) => trackList.tracks[id]),
   );
 
+  const order = createMemo(() => {
+    console.log("order changed!");
+    return trackList.order;
+  });
+
+  createEffect(() => {
+    console.log(trackList.order);
+  });
+
   const [tracksFromDb] = createResource(
-    order,
+    () => trackList.order,
     async (ord) => {
       const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
       const resp = await fetch(`/api/tracks?order=${orderParam}&limit=500`, {
@@ -120,6 +101,7 @@ export const App = () => {
   );
 
   createEffect(() => {
+    console.log("fetched!");
     const fetched = tracksFromDb();
     setTrackList(
       "listing",
@@ -172,9 +154,25 @@ export const App = () => {
       <div class="absolute top-0 left-0 flex h-full w-full flex-col p-4">
         <div class="flex flex-row items-start p-4">
           <Order
+            onClick={(ch) =>
+              setTrackList(
+                "order",
+                produce((order) => changeOrder(order, ch)),
+              )
+            }
             value={order()}
-            onChange={setOrder}
-            options={["artist", "album", "title", "length", "score", "added"]}
+            options={[
+              "albumartist",
+              "artist",
+              "album",
+              "disc",
+              "track",
+              "title",
+              "length",
+              "original_year",
+              "score",
+              "added",
+            ]}
           />
         </div>
 
@@ -185,7 +183,7 @@ export const App = () => {
         />
 
         <div class="relative h-3/4 grow">
-          <div class="absolute h-full w-full overflow-y-scroll bg-gray-100">
+          <div class="absolute h-full w-full overflow-y-scroll bg-gray-900">
             <TrackList
               onPlay={(x) => setCurrentTrack(x.id)}
               tracks={tracks()}

@@ -1,97 +1,51 @@
-import { createContext, createMemo, For, useContext, type JSX } from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { createMemo, For, type Component } from "solid-js";
 
-import { propsOverride } from "../../lib/components";
+import type { Track } from "../../schemas/track";
 
+import { DataRow, HeaderRow } from "./Row";
 import { type ColumnDefs, type FieldsTypes } from "./types";
 
-const Title = propsOverride("div", {
-  "data-title": true,
-  class: "overflow-x-hidden text-lg text-nowrap overflow-ellipsis",
-});
+type RowGroup<T, GroupKey = never> = {
+  key: GroupKey | keyof T;
+  rows: T[];
+};
 
-const RowContext = createContext<{ rowIndex: number }>();
-
-const LiteralCell = (props: {
-  index: number;
-  class?: string;
-  className?: { [className: string]: boolean };
-  children: JSX.Element[] | JSX.Element;
-}) => (
-  <div data-cell data-col-index={props.index}>
-    {props.children}
-  </div>
-);
-
-const DataCell = <T, K extends keyof T>(props: {
-  index: number;
-  column: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>;
-  row: T;
-  class?: string;
-  classList?: Record<string, boolean>;
-}) => {
-  const context = useContext(RowContext);
-  if (!context) {
-    throw new Error("DataCell must be used within a RowContext");
-  }
-  return props.column.cell ? (
-    <Dynamic
-      component={props.column.cell}
-      data-cell
-      data-row-index={context.rowIndex}
-      data-col-index={props.index}
-      class={props.class}
-      style={{
-        "grid-column": props.index + 1,
-        width: props.column.size,
-      }}
-      row={props.row}
-      value={props.row[props.column.accessorKey]}
-      absoluteRowIndex={context.rowIndex}
-    />
-  ) : (
-    String(props.row[props.column.accessorKey] ?? "")
+const looseGroups = <T, GroupKey = never>(
+  groupKey: GroupKey extends never ? keyof T : (row: T) => GroupKey,
+  rows: T[],
+): RowGroup<T, GroupKey>[] => {
+  // the idea is that collections are grouped in-place; no re-collection
+  return rows.reduce(
+    (xs, x) => {
+      const thisKey =
+        typeof groupKey === "function" ? groupKey(x) : (groupKey as keyof T);
+      let group = xs[-1];
+      if (!group || group.key !== thisKey) {
+        group = {
+          key: thisKey,
+          rows: [],
+        };
+        xs.push(group);
+      }
+      group.rows.push(x);
+      return xs;
+    },
+    [] as RowGroup<T, GroupKey>[],
   );
 };
 
-const HeaderRow = <T, K extends keyof T>(props: {
-  columns: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>[];
-}) => {
-  return (
-    <div data-row data-row-index={-1} class="contents">
-      <For each={props.columns}>
-        {(column, i) => (
-          <LiteralCell index={i()}>
-            <Title>{column.header}</Title>
-          </LiteralCell>
-        )}
-      </For>
+const albumArt: {
+  component: Component<{ row: Track; group: Track[] }>;
+} & Pick<RowGroup<Track>, "key"> = {
+  key: "album_id",
+  component: (props) => (
+    <div class="flex content-center items-center">
+      <img
+        class="aspect-square w-[500px]"
+        src={`/api/albums/${props.row.album_id}/artwork`}
+      />
     </div>
-  );
-};
-
-const DataRow = <T, K extends keyof T>(props: {
-  index: number;
-  row: T;
-  columns: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>[];
-  onRowDblClick: (item: T) => void;
-}) => {
-  return (
-    <div
-      data-row
-      data-row-index={props.index}
-      class="contents"
-      onDblClick={() => props.onRowDblClick(props.row)}
-    >
-      <RowContext.Provider value={{ rowIndex: props.index }}>
-        <For each={props.columns}>
-          {(column, j) => (
-            <DataCell index={j()} row={props.row} column={column} />
-          )}
-        </For>
-      </RowContext.Provider>
-    </div>
-  );
+  ),
 };
 
 export const DataTable = <
@@ -126,9 +80,22 @@ export const DataTable = <
       .join(" "),
   );
 
+  const allRows = (
+    <For each={props.data}>
+      {(row, i) => (
+        <DataRow
+          index={i()}
+          row={row}
+          columns={orderedColumns()}
+          onRowDblClick={props.onRowDblClick}
+        />
+      )}
+    </For>
+  );
+
   return (
     <div
-      class="relative grid min-h-full gap-2 bg-inherit **:data-title:font-bold"
+      class="relative grid min-h-full gap-x-2 bg-inherit **:data-title:font-bold"
       style={{
         // Header row and then remaining space for data
         "grid-template-rows": "min-content auto",
@@ -141,16 +108,7 @@ export const DataTable = <
         <div class="relative col-span-full row-start-2 h-[0.5px] bg-gray-700" />
       </div>
 
-      <For each={props.data}>
-        {(row, i) => (
-          <DataRow
-            index={i()}
-            row={row}
-            columns={orderedColumns()}
-            onRowDblClick={props.onRowDblClick}
-          />
-        )}
-      </For>
+      {allRows}
     </div>
   );
 };

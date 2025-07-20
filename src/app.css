@@ -6,8 +6,8 @@
 /* slightly desaturated light tan: #D8B18A */
 
 :root {
-  --bg: theme("colors.gray.100");
-  --fg: theme("colors.gray.900");
+  --bg: theme("colors.gray.900");
+  --fg: theme("colors.gray.100");
 }
 
 body {
