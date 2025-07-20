@@ -6,14 +6,15 @@
 /* slightly desaturated light tan: #D8B18A */
 
 :root {
-  --bg: theme("colors.gray.900");
-  --fg: theme("colors.blue.100");
+  --bg: theme("colors.gray.100");
+  --fg: theme("colors.gray.900");
 }
 
 body {
   font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
   background-color: var(--bg);
   color: var(--fg);
+  font-size: 15px;
 }
 
 #root {

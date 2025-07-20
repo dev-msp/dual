@@ -1,20 +1,14 @@
-import {
-  createContext,
-  createMemo,
-  For,
-  useContext,
-  type JSX,
-} from "solid-js";
+import { createContext, createMemo, For, useContext, type JSX } from "solid-js";
 import { Dynamic } from "solid-js/web";
+
+import { propsOverride } from "../../lib/components";
 
 import { type ColumnDefs, type FieldsTypes } from "./types";
 
-// internal components and context
-const Title = (props: { children: JSX.Element[] | JSX.Element }) => (
-  <div data-title class="overflow-hidden text-lg text-nowrap overflow-ellipsis">
-    {props.children}
-  </div>
-);
+const Title = propsOverride("div", {
+  "data-title": true,
+  class: "overflow-x-hidden text-lg text-nowrap overflow-ellipsis",
+});
 
 const RowContext = createContext<{ rowIndex: number }>();
 
@@ -60,6 +54,46 @@ const DataCell = <T, K extends keyof T>(props: {
   );
 };
 
+const HeaderRow = <T, K extends keyof T>(props: {
+  columns: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>[];
+}) => {
+  return (
+    <div data-row data-row-index={-1} class="contents">
+      <For each={props.columns}>
+        {(column, i) => (
+          <LiteralCell index={i()}>
+            <Title>{column.header}</Title>
+          </LiteralCell>
+        )}
+      </For>
+    </div>
+  );
+};
+
+const DataRow = <T, K extends keyof T>(props: {
+  index: number;
+  row: T;
+  columns: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>[];
+  onRowDblClick: (item: T) => void;
+}) => {
+  return (
+    <div
+      data-row
+      data-row-index={props.index}
+      class="contents"
+      onDblClick={() => props.onRowDblClick(props.row)}
+    >
+      <RowContext.Provider value={{ rowIndex: props.index }}>
+        <For each={props.columns}>
+          {(column, j) => (
+            <DataCell index={j()} row={props.row} column={column} />
+          )}
+        </For>
+      </RowContext.Provider>
+    </div>
+  );
+};
+
 export const DataTable = <
   T extends Record<string, any>,
   K extends keyof T,
@@ -94,45 +128,27 @@ export const DataTable = <
 
   return (
     <div
-      class="relative grid h-full gap-3 **:data-title:font-bold"
+      class="relative grid min-h-full gap-2 bg-inherit **:data-title:font-bold"
       style={{
-        "grid-template-rows": "min-content auto", // Header row and then remaining space for data
+        // Header row and then remaining space for data
+        "grid-template-rows": "min-content auto",
         "grid-template-columns": gridTemplateColumns(),
       }}
     >
       {/* Header Row */}
-      <div class="sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid">
-        <RowContext.Provider value={{ rowIndex: -1 }}>
-          <For each={orderedColumns()}>
-            {(column, i) => (
-              <LiteralCell index={i()}>
-                <Title>{column.header}</Title>
-              </LiteralCell>
-            )}
-          </For>
-        </RowContext.Provider>
+      <div class="sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid bg-inherit py-2">
+        <HeaderRow columns={orderedColumns()} />
+        <div class="relative col-span-full row-start-2 h-[0.5px] bg-gray-700" />
       </div>
-
-      <div class="relative col-span-full row-start-2 h-[0.5px] bg-gray-700" />
 
       <For each={props.data}>
         {(row, i) => (
-          <div
-            data-row
-            data-row-index={i()}
-            class="contents"
-            onDblClick={() => {
-              props.onRowDblClick(row);
-            }}
-          >
-            <RowContext.Provider value={{ rowIndex: i() }}>
-              <For each={orderedColumns()}>
-                {(column, j) => (
-                  <DataCell index={j()} row={row} column={column} />
-                )}
-              </For>
-            </RowContext.Provider>
-          </div>
+          <DataRow
+            index={i()}
+            row={row}
+            columns={orderedColumns()}
+            onRowDblClick={props.onRowDblClick}
+          />
         )}
       </For>
     </div>

@@ -1,36 +1,14 @@
-import {
-  createMemo,
-  type Component,
-  type ComponentProps,
-  type JSX,
-} from "solid-js";
-import { Dynamic } from "solid-js/web";
+import { createMemo } from "solid-js";
 
+import { propsOverride } from "../lib/components";
 import { type Track } from "../schemas/track";
 
 import { DataTable } from "./DataTable";
 import { type ColumnDefs } from "./DataTable/types";
 
-const classOverride = <
-  E extends Extract<ComponentProps<C>, { class?: string }>,
-  C extends keyof JSX.IntrinsicElements,
->(
-  class_: string,
-  Component: C,
-): Component<E> => {
-  return (props: E) => (
-    <Dynamic
-      component={Component}
-      {...props}
-      class={`${class_} ${props.class || ""}`}
-    />
-  );
-};
-
-const NoWrap = classOverride(
-  "overflow-hidden text-left overflow-ellipsis whitespace-nowrap",
-  "div",
-);
+const NoWrap = propsOverride("div", {
+  class: "overflow-hidden text-left overflow-ellipsis whitespace-nowrap",
+});
 
 // factory function to create column definitions for tracks
 const createTrackColumns = <Keys extends keyof Track>(
@@ -78,9 +56,7 @@ const createTrackColumns = <Keys extends keyof Track>(
         accessorKey: "title",
         header: "Title",
         size: "2fr",
-        cell: (props) => (
-          <NoWrap class="text-lg font-bold">{props.value}</NoWrap>
-        ),
+        cell: (props) => <NoWrap class="font-bold">{props.value}</NoWrap>,
       },
       length: {
         accessorKey: "length",

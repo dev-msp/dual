@@ -91,14 +91,14 @@ const [trackList, setTrackList] = createStore<ListState>({
   error: null,
 });
 
-const tracks = createMemo(() =>
-  trackList.listing.map((id) => trackList.tracks[id]),
-);
-
 export const App = () => {
   const [order, setOrder] = createSignal<Ordering[]>([
     { field: "albumartist", direction: "desc" },
   ]);
+
+  const tracks = createMemo(() =>
+    trackList.listing.map((id) => trackList.tracks[id]),
+  );
 
   const [tracksFromDb] = createResource(
     order,
@@ -185,7 +185,7 @@ export const App = () => {
         />
 
         <div class="relative h-3/4 grow">
-          <div class="absolute h-full w-full overflow-y-scroll">
+          <div class="absolute h-full w-full overflow-y-scroll bg-gray-100">
             <TrackList
               onPlay={(x) => setCurrentTrack(x.id)}
               tracks={tracks()}
