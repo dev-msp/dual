@@ -1,4 +1,4 @@
-import { type JSX } from "solid-js";
+import { type Component, type ComponentProps } from "solid-js";
 
 export interface CellContext<T> {
   row: T; // the full data object for the row
@@ -9,18 +9,20 @@ export type KeyedCellContext<T, K extends keyof T> = CellContext<T> & {
   value: T[K];
 };
 
-export type ColumnField<T, Ctx extends KeyedCellContext<T, keyof T>> = {
+export type ColumnField<T, Ctx extends KeyedCellContext<T, keyof T>, P> = {
   hide?: boolean; // whether to hide this column
   header: string; // the header text for this column
   size?: string; // css grid-template-columns value (e.g. "1fr", "200px")
-  cell?: (context: Ctx) => JSX.Element; // custom rendering function for the cell
+  cell?: Component<Ctx & P>;
 };
 
+type Div = ComponentProps<"div">;
+
 // defines the set of possible table columns
-export type ColumnDefs<T, K extends keyof T> = {
+export type ColumnDefs<T, K extends keyof T, P = Div> = {
   order: K[];
   fields: {
-    [K in keyof T]?: ColumnField<T, KeyedCellContext<T, K>> & {
+    [K in keyof T]?: ColumnField<T, KeyedCellContext<T, K>, P> & {
       accessorKey: K;
     };
   };

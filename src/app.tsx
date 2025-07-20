@@ -75,45 +75,6 @@ const playbackEventSchema = z.discriminatedUnion("type", [
   }),
 ]);
 
-const Controls = () => {
-  return (
-    <div class="flex items-center gap-2">
-      <button
-        class="border p-1"
-        onClick={() => {
-          // Handle play/pause logic
-        }}
-      >
-        Play/Pause
-      </button>
-      <button
-        class="border p-1"
-        onClick={() => {
-          // Handle clear queue logic
-        }}
-      >
-        Clear Queue
-      </button>
-      <button
-        class="border p-1"
-        onClick={() => {
-          // Handle enqueue next logic
-        }}
-      >
-        Enqueue Next
-      </button>
-      <button
-        class="border p-1"
-        onClick={() => {
-          // Handle enqueue end logic
-        }}
-      >
-        Enqueue End
-      </button>
-    </div>
-  );
-};
-
 type ListState = {
   tracks: { [trackId: number]: Track };
   listing: number[];
@@ -143,7 +104,7 @@ export const App = () => {
     order,
     async (ord) => {
       const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
-      const resp = await fetch(`/api/tracks?order=${orderParam}`, {
+      const resp = await fetch(`/api/tracks?order=${orderParam}&limit=500`, {
         headers: { Accept: "application/json" },
       });
       try {
@@ -210,7 +171,6 @@ export const App = () => {
     <MetaProvider>
       <div class="absolute top-0 left-0 flex h-full w-full flex-col p-4">
         <div class="flex flex-row items-start p-4">
-          <Controls />
           <Order
             value={order()}
             onChange={setOrder}

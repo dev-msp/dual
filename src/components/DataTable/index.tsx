@@ -4,7 +4,6 @@ import {
   For,
   useContext,
   type JSX,
-  Show,
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
@@ -19,9 +18,21 @@ const Title = (props: { children: JSX.Element[] | JSX.Element }) => (
 
 const RowContext = createContext<{ rowIndex: number }>();
 
-const DataCell = (props: {
+const LiteralCell = (props: {
   index: number;
+  class?: string;
+  className?: { [className: string]: boolean };
   children: JSX.Element[] | JSX.Element;
+}) => (
+  <div data-cell data-col-index={props.index}>
+    {props.children}
+  </div>
+);
+
+const DataCell = <T, K extends keyof T>(props: {
+  index: number;
+  column: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>;
+  row: T;
   class?: string;
   classList?: Record<string, boolean>;
 }) => {
@@ -29,17 +40,23 @@ const DataCell = (props: {
   if (!context) {
     throw new Error("DataCell must be used within a RowContext");
   }
-  return (
-    <div
+  return props.column.cell ? (
+    <Dynamic
+      component={props.column.cell}
       data-cell
       data-row-index={context.rowIndex}
       data-col-index={props.index}
       class={props.class}
-      classList={props.classList}
-      style={{ "grid-column": props.index + 1 }}
-    >
-      {props.children}
-    </div>
+      style={{
+        "grid-column": props.index + 1,
+        width: props.column.size,
+      }}
+      row={props.row}
+      value={props.row[props.column.accessorKey]}
+      absoluteRowIndex={context.rowIndex}
+    />
+  ) : (
+    String(props.row[props.column.accessorKey] ?? "")
   );
 };
 
@@ -57,7 +74,10 @@ export const DataTable = <
       .reduce(
         (xs, x) => {
           if (x in props.columns.fields) {
-            xs.push({ ...props.columns.fields[x], accessorKey: x });
+            const col = props.columns.fields[x];
+            if (!col?.hide) {
+              xs.push({ ...props.columns.fields[x], accessorKey: x });
+            }
           }
           return xs;
         },
@@ -85,11 +105,9 @@ export const DataTable = <
         <RowContext.Provider value={{ rowIndex: -1 }}>
           <For each={orderedColumns()}>
             {(column, i) => (
-              <Show when={!column.hide}>
-                <DataCell index={i()}>
-                  <Title>{column.header}</Title>
-                </DataCell>
-              </Show>
+              <LiteralCell index={i()}>
+                <Title>{column.header}</Title>
+              </LiteralCell>
             )}
           </For>
         </RowContext.Provider>
@@ -110,24 +128,7 @@ export const DataTable = <
             <RowContext.Provider value={{ rowIndex: i() }}>
               <For each={orderedColumns()}>
                 {(column, j) => (
-                  <Show when={!column.hide}>
-                    {(_) => {
-                      return (
-                        <DataCell index={j()}>
-                          {column.cell ? (
-                            <Dynamic
-                              component={column.cell}
-                              row={row}
-                              value={row[column.accessorKey]}
-                              absoluteRowIndex={i()}
-                            />
-                          ) : (
-                            String(row[column.accessorKey] ?? "")
-                          )}
-                        </DataCell>
-                      );
-                    }}
-                  </Show>
+                  <DataCell index={j()} row={row} column={column} />
                 )}
               </For>
             </RowContext.Provider>
