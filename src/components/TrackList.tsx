@@ -1,5 +1,6 @@
 import { createMemo } from "solid-js";
 
+import { AlbumGroup } from "../components/AlbumGroup";
 import { propsOverride } from "../lib/components";
 import { type Track } from "../schemas/track";
 
@@ -11,7 +12,6 @@ const NoWrap = propsOverride("div", {
     "overflow-hidden py-[3px] text-left overflow-ellipsis whitespace-nowrap",
 });
 
-// factory function to create column definitions for tracks
 const createTrackColumns = <Keys extends keyof Track>(
   tracks: Track[],
   order: Keys[],
@@ -20,7 +20,7 @@ const createTrackColumns = <Keys extends keyof Track>(
     order: order,
     fields: {
       id: {
-        accessorKey: "id", // Using id as accessor, but rendering absoluteRowIndex
+        accessorKey: "id",
         hide: true,
         header: "#",
         size: "min-content",
@@ -28,20 +28,6 @@ const createTrackColumns = <Keys extends keyof Track>(
           <div {...props}>{absoluteRowIndex + 1}</div>
         ),
       },
-      // album_id: {
-      //   accessorKey: "album_id",
-      //   header: "",
-      //   size: "70px",
-      //   cell: (props) => (
-      //     <Show when={props.value} fallback={<span />}>
-      //       <img
-      //         class="my-2"
-      //         style={{ width: "70px", height: "70px" }}
-      //         src={`/api/albums/${props.value}/artwork`}
-      //       />
-      //     </Show>
-      //   ),
-      // },
       disc: {
         accessorKey: "disc",
         hide: true,
@@ -76,7 +62,7 @@ const createTrackColumns = <Keys extends keyof Track>(
           const minutes = Math.floor(duration / 60);
           const seconds = Math.floor(duration % 60);
           return (
-            <span>{`${minutes}:${seconds.toString().padStart(2, "0")}`}</span>
+            <NoWrap>{`${minutes}:${seconds.toString().padStart(2, "0")}`}</NoWrap>
           );
         },
       },
@@ -104,9 +90,9 @@ const createTrackColumns = <Keys extends keyof Track>(
         header: "Score",
         size: "1fr",
         cell: (props) => (
-          <span class="text-left">
+          <NoWrap class="text-left">
             {props.value !== null ? props.value.toFixed(2) : "-"}
-          </span>
+          </NoWrap>
         ),
       },
     },
@@ -117,24 +103,26 @@ export const TrackList = (props: {
   onPlay: (track: Track) => void;
   tracks: Track[];
 }) => {
-  // Memoize column definitions, re-creating only when tracks change
   const columns = createMemo(() =>
     createTrackColumns(props.tracks, [
       "id",
-      "album_id",
       "disc",
       "track",
       "title",
       "length",
       "albumartist",
-      "album",
       "original_year",
       "score",
     ]),
   );
 
+  const albumArtColumnSize = "calc(300px + 2rem)";
+
   return (
     <DataTable
+      groupBy="album_id"
+      GroupComponent={AlbumGroup}
+      groupColumnSize={albumArtColumnSize}
       onRowDblClick={(row: Track) => {
         console.log(`Double-clicked track: ${row.title} by ${row.artist}`);
         props.onPlay(row);

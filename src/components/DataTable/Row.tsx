@@ -38,7 +38,7 @@ export const DataRow = <T, K extends keyof T>(props: {
     <div
       data-row
       data-row-index={props.index}
-      class="grid cursor-pointer grid-cols-subgrid"
+      class="grid cursor-pointer grid-cols-subgrid text-sm odd:bg-blue-100/50"
       style={{ "grid-column": "1 / -1" }}
       onDblClick={() => props.onRowDblClick(props.row)}
     >

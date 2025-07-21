@@ -77,8 +77,8 @@ export const Order = (props: OrderProps) => {
           <div
             class="rounded-2xl px-2 py-1"
             classList={{
-              "border border-gray-100": !option.selected,
-              "text-gray-900 bg-gray-100": option.selected,
+              "border border-blue-50": !option.selected,
+              "text-gray-900 bg-blue-50": option.selected,
             }}
             onClick={(e) => onClickOption(e, option)}
           >

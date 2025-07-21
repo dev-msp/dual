@@ -195,7 +195,7 @@ export const App = () => {
         </div>
 
         <div class="relative h-3/4 grow">
-          <div class="absolute h-full w-full overflow-y-scroll bg-gray-900">
+          <div class="absolute h-full w-full overflow-y-scroll bg-blue-50">
             <TrackList
               onPlay={(x) => setCurrentTrack(x.id)}
               tracks={tracks()}
