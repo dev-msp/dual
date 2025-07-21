@@ -17,7 +17,7 @@ export const LiteralCell = (props: {
 
 export const DataCell = <T, K extends keyof T>(props: {
   index: number;
-  column: NonNullable<FieldsTypes<T, K>>;
+  column: FieldsTypes<T, K>;
   row: T;
   class?: string;
   classList?: Record<string, boolean>;

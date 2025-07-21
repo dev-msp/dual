@@ -3,7 +3,7 @@ import { createContext, For } from "solid-js";
 import { propsOverride } from "../../lib/components";
 
 import { DataCell, LiteralCell } from "./Cell";
-import { type ColumnDefs, type FieldsTypes } from "./types";
+import { type FieldsTypes } from "./types";
 
 const Title = propsOverride("div", {
   "data-title": true,
@@ -13,7 +13,7 @@ const Title = propsOverride("div", {
 export const RowContext = createContext<{ rowIndex: number }>();
 
 export const HeaderRow = <T, K extends keyof T>(props: {
-  columns: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>[];
+  columns: FieldsTypes<T, K>[];
 }) => {
   return (
     <div data-row data-row-index={-1} class="contents">
@@ -31,7 +31,7 @@ export const HeaderRow = <T, K extends keyof T>(props: {
 export const DataRow = <T, K extends keyof T>(props: {
   index: number;
   row: T;
-  columns: NonNullable<FieldsTypes<ColumnDefs<T, K>, T, K>>[];
+  columns: FieldsTypes<T, K>[];
   onRowDblClick: (item: T) => void;
 }) => {
   return (

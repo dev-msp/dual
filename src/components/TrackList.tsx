@@ -21,6 +21,7 @@ const createTrackColumns = <Keys extends keyof Track>(
     fields: {
       id: {
         accessorKey: "id", // Using id as accessor, but rendering absoluteRowIndex
+        hide: true,
         header: "#",
         size: "min-content",
         cell: ({ absoluteRowIndex, ...props }) => (
@@ -43,6 +44,7 @@ const createTrackColumns = <Keys extends keyof Track>(
       // },
       disc: {
         accessorKey: "disc",
+        hide: true,
         header: "Disc",
         size: "min-content",
         cell: (props) => <NoWrap>{props.value || ""}</NoWrap>,
@@ -51,7 +53,13 @@ const createTrackColumns = <Keys extends keyof Track>(
         accessorKey: "track",
         header: "Track",
         size: "min-content",
-        cell: (props) => <NoWrap>{props.value || ""}</NoWrap>,
+        cell: (props) => (
+          <NoWrap>
+            {props.value
+              ? [props.row.disc, props.value].filter((x) => !!x).join("x")
+              : ""}
+          </NoWrap>
+        ),
       },
       title: {
         accessorKey: "title",

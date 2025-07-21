@@ -13,12 +13,10 @@ import {
 import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
-import type { Ordering } from "../server/api";
-
 import { TrackList } from "./components/TrackList";
 import { observable } from "./lib/reactive";
 import { elementStream } from "./lib/reactive/dom";
-import { changeOrder, Order } from "./Order";
+import { nextDirection, Order } from "./Order";
 import { trackSchema, type Track } from "./schemas/track";
 
 const trackIdSchema = z.number().positive();
@@ -49,7 +47,7 @@ type ListState = {
   listing: number[];
   selection: { [trackId: number]: boolean };
   loading: boolean;
-  order: Ordering[];
+  order: { [K in keyof Track]?: "asc" | "desc" };
   error: Error | null;
 };
 
@@ -57,15 +55,34 @@ const [trackList, setTrackList] = createStore<ListState>({
   tracks: {},
   listing: [],
   selection: {},
-  order: [
-    { field: "albumartist", direction: "asc" },
-    { field: "original_year", direction: "desc" },
-    { field: "disc", direction: "asc" },
-    { field: "track", direction: "asc" },
-  ],
+  // order: [
+  //   { field: "albumartist", direction: "asc" },
+  //   { field: "original_year", direction: "desc" },
+  //   { field: "disc", direction: "asc" },
+  //   { field: "track", direction: "asc" },
+  // ],
+  order: {
+    albumartist: "asc",
+    original_year: "desc",
+    disc: "asc",
+    track: "asc",
+  },
   loading: false,
   error: null,
 });
+
+const ORDER_OPTIONS: (keyof Track)[] = [
+  "original_year",
+  "albumartist",
+  "artist",
+  "album",
+  "disc",
+  "track",
+  "title",
+  "length",
+  "score",
+  "added",
+];
 
 export const App = () => {
   const tracks = createMemo(() =>
@@ -74,15 +91,24 @@ export const App = () => {
 
   const order = createMemo(() => {
     console.log("order changed!");
-    return trackList.order;
+    return ORDER_OPTIONS.reduce(
+      (xs, x) => {
+        const direction = trackList.order[x];
+        if (direction) {
+          xs.push({ field: x, direction });
+        }
+        return xs;
+      },
+      [] as { field: keyof Track; direction: "asc" | "desc" }[],
+    );
   });
 
   createEffect(() => {
-    console.log(trackList.order);
+    console.log(order());
   });
 
   const [tracksFromDb] = createResource(
-    () => trackList.order,
+    order,
     async (ord) => {
       const orderParam = ord.map((o) => `${o.field}:${o.direction}`).join(",");
       const resp = await fetch(`/api/tracks?order=${orderParam}&limit=500`, {
@@ -151,29 +177,20 @@ export const App = () => {
 
   return (
     <MetaProvider>
-      <div class="absolute top-0 left-0 flex h-full w-full flex-col p-4">
+      <div class="mx-auto flex h-full w-7/8 max-w-[1600px] flex-col p-4 max-md:w-full">
         <div class="flex flex-row items-start p-4">
           <Order
-            onClick={(ch) =>
-              setTrackList("order", (order) => {
-                const newOrder = [...order];
-                changeOrder(newOrder, ch);
-                return newOrder;
-              })
-            }
+            onClick={(ch) => {
+              setTrackList("order", ch.field, nextDirection);
+              if (ch.type === "replace") {
+                const otherKeys = Object.keys(trackList.order).filter(
+                  (x) => x !== ch.field,
+                ) as (keyof Track)[];
+                setTrackList("order", otherKeys, undefined);
+              }
+            }}
             value={order()}
-            options={[
-              "albumartist",
-              "artist",
-              "album",
-              "disc",
-              "track",
-              "title",
-              "length",
-              "original_year",
-              "score",
-              "added",
-            ]}
+            options={ORDER_OPTIONS}
           />
         </div>
 

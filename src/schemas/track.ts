@@ -6,6 +6,7 @@ export const trackSchema = z.object({
   disc: z.number().nullable(),
   track: z.number().nullable(),
   length: z.number(),
+  added: z.number(),
   original_year: z.number().nullable(),
   original_month: z.number().nullable(),
   original_day: z.number().nullable(),

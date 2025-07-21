@@ -33,4 +33,4 @@ export type FieldsTypes<
   T,
   K extends keyof T,
   Defs extends ColumnDefs<T, K> = ColumnDefs<T, K>,
-> = Defs["fields"][K];
+> = NonNullable<Defs["fields"][K]>;
