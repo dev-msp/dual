@@ -11,6 +11,7 @@ export type KeyedCellContext<T, K extends keyof T> = CellContext<T> & {
 
 export type ColumnField<T, Ctx extends KeyedCellContext<T, keyof T>, P> = {
   hide?: boolean; // whether to hide this column
+  primaryField?: boolean;
   header: string; // the header text for this column
   size?: string; // css grid-template-columns value (e.g. "1fr", "200px")
   cell?: Component<Ctx & P>;
@@ -29,7 +30,7 @@ export type ColumnDefs<T, K extends keyof T, P = Div> = {
 };
 
 export type FieldsTypes<
-  Defs extends ColumnDefs<T, K>,
   T,
   K extends keyof T,
+  Defs extends ColumnDefs<T, K> = ColumnDefs<T, K>,
 > = Defs["fields"][K];

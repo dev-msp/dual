@@ -1,4 +1,4 @@
-import { createMemo, For, Show } from "solid-js";
+import { createEffect, createMemo, For, Show } from "solid-js";
 
 import type { Ordering } from "../server/api";
 
@@ -36,7 +36,7 @@ export const changeOrder = (order: Ordering[], ch: OrderChange) => {
     case "append": {
       console.log("Append order", newOrder);
       order.push(newOrder);
-      break;
+      return;
     }
     case "toggle": {
       console.log("Toggle order", newOrder);
@@ -54,20 +54,26 @@ export const changeOrder = (order: Ordering[], ch: OrderChange) => {
       }
       console.log("Add order", newOrder);
       order.push(newOrder);
-      break;
+      return;
+    }
+    case "replace": {
+      order.splice(0, order.length, newOrder);
+      return;
     }
   }
 };
 
 export const Order = (props: OrderProps) => {
   const orderedOptions = createMemo((): OrderWithSelection[] => {
-    const selectedValues = props.value.map((o) => o.field);
-    const s = new Set(selectedValues);
-    const unselected = props.options.filter((o) => !s.has(o));
-    return [
-      ...props.value.map((o) => ({ ...o, selected: true })),
-      ...unselected.map((field) => ({ selected: false, field })),
-    ];
+    const selection = new Map(props.value.map((o) => [o.field, o] as const));
+    return props.options.map((field) => {
+      const fromSel = selection.get(field)?.direction;
+      return { selected: !!fromSel, field, direction: fromSel };
+    });
+  });
+
+  createEffect(() => {
+    console.log(JSON.stringify(orderedOptions(), null, 2));
   });
 
   return (
@@ -79,9 +85,16 @@ export const Order = (props: OrderProps) => {
             classList={{
               "border border-black": !option.selected,
             }}
-            onClick={() => {
+            onClick={(evt) => {
               console.log("Change order", option);
-              props.onClick({ type: "toggle", field: option.field });
+              props.onClick({
+                type: option.selected
+                  ? "toggle"
+                  : evt.shiftKey
+                    ? "append"
+                    : "replace",
+                field: option.field,
+              });
             }}
           >
             <span

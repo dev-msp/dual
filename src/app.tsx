@@ -10,7 +10,7 @@ import {
   createSignal,
   onCleanup,
 } from "solid-js";
-import { createStore, produce } from "solid-js/store";
+import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
 import type { Ordering } from "../server/api";
@@ -155,10 +155,11 @@ export const App = () => {
         <div class="flex flex-row items-start p-4">
           <Order
             onClick={(ch) =>
-              setTrackList(
-                "order",
-                produce((order) => changeOrder(order, ch)),
-              )
+              setTrackList("order", (order) => {
+                const newOrder = [...order];
+                changeOrder(newOrder, ch);
+                return newOrder;
+              })
             }
             value={order()}
             options={[

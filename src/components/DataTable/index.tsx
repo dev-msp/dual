@@ -1,52 +1,7 @@
-import { createMemo, For, type Component } from "solid-js";
-
-import type { Track } from "../../schemas/track";
+import { createMemo, For } from "solid-js";
 
 import { DataRow, HeaderRow } from "./Row";
 import { type ColumnDefs, type FieldsTypes } from "./types";
-
-type RowGroup<T, GroupKey = never> = {
-  key: GroupKey | keyof T;
-  rows: T[];
-};
-
-const looseGroups = <T, GroupKey = never>(
-  groupKey: GroupKey extends never ? keyof T : (row: T) => GroupKey,
-  rows: T[],
-): RowGroup<T, GroupKey>[] => {
-  // the idea is that collections are grouped in-place; no re-collection
-  return rows.reduce(
-    (xs, x) => {
-      const thisKey =
-        typeof groupKey === "function" ? groupKey(x) : (groupKey as keyof T);
-      let group = xs[-1];
-      if (!group || group.key !== thisKey) {
-        group = {
-          key: thisKey,
-          rows: [],
-        };
-        xs.push(group);
-      }
-      group.rows.push(x);
-      return xs;
-    },
-    [] as RowGroup<T, GroupKey>[],
-  );
-};
-
-const albumArt: {
-  component: Component<{ row: Track; group: Track[] }>;
-} & Pick<RowGroup<Track>, "key"> = {
-  key: "album_id",
-  component: (props) => (
-    <div class="flex content-center items-center">
-      <img
-        class="aspect-square w-[500px]"
-        src={`/api/albums/${props.row.album_id}/artwork`}
-      />
-    </div>
-  ),
-};
 
 export const DataTable = <
   T extends Record<string, any>,
@@ -69,7 +24,7 @@ export const DataTable = <
           }
           return xs;
         },
-        [] as FieldsTypes<typeof props.columns, T, K>[],
+        [] as FieldsTypes<T, K>[],
       )
       .filter((c) => !!c),
   );
