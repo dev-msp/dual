@@ -54,7 +54,7 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
       </div>
 
       <div style={{ "grid-column": `2 / span ${numDataColumns()}` }}>
-        <Title class="mb-4 text-xl">{albumName()}</Title>
+        <Title class="mb-2 text-xl">{albumName()}</Title>
       </div>
 
       <div

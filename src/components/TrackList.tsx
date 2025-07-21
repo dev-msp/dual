@@ -51,7 +51,7 @@ const createTrackColumns = <Keys extends keyof Track>(
         accessorKey: "title",
         header: "Title",
         size: "2fr",
-        cell: (props) => <NoWrap class="font-bold">{props.value}</NoWrap>,
+        cell: (props) => <NoWrap class="font-medium">{props.value}</NoWrap>,
       },
       length: {
         accessorKey: "length",

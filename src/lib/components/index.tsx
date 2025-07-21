@@ -12,10 +12,7 @@ type PropsWithClass<T extends ValidComponent> = Extract<
   { class?: string }
 >;
 
-export const propsOverride = <
-  E extends C & { class?: string },
-  C extends { class?: string },
->(
+export const propsOverride = <E extends C, C extends { class?: string }>(
   comp: Component<C> | keyof JSX.IntrinsicElements,
   propsOverride:
     | Partial<E>
