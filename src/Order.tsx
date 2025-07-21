@@ -7,6 +7,21 @@ type Ordering = {
   direction?: "asc" | "desc";
 };
 
+const orderDisplay: Partial<Record<keyof Track, string>> = {
+  disc: "Disc",
+  track: "Track",
+  length: "Length",
+  added: "Added",
+  original_year: "Year",
+  original_month: "Month",
+  original_day: "Day",
+  title: "Title",
+  artist: "Artist",
+  album: "Album",
+  albumartist: "Album Artist",
+  score: "Score",
+};
+
 export type OrderProps = {
   value: Ordering[];
   options: Ordering["field"][];
@@ -56,7 +71,7 @@ export const Order = (props: OrderProps) => {
     });
   };
   return (
-    <div class="flex flex-wrap items-start gap-2">
+    <div class="flex w-full flex-wrap items-start gap-2 text-sm">
       <For each={orderedOptions()}>
         {(option) => (
           <div
@@ -72,7 +87,7 @@ export const Order = (props: OrderProps) => {
                 "font-bold": option.selected,
               }}
             >
-              {option.field}
+              {orderDisplay[option.field] ?? option.field}
             </span>
             <Show when={option.direction}>
               {(dir) => (
@@ -84,6 +99,7 @@ export const Order = (props: OrderProps) => {
           </div>
         )}
       </For>
+      <div class="float-right text-xl">&#x21BA;</div>
     </div>
   );
 };

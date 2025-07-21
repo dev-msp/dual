@@ -194,12 +194,6 @@ export const App = () => {
           />
         </div>
 
-        <audio
-          ref={audioEl.ref}
-          class="absolute bottom-0 left-0 w-full"
-          preload="metadata"
-        />
-
         <div class="relative h-3/4 grow">
           <div class="absolute h-full w-full overflow-y-scroll bg-gray-900">
             <TrackList
@@ -207,6 +201,10 @@ export const App = () => {
               tracks={tracks()}
             />
           </div>
+        </div>
+
+        <div id="player">
+          <audio ref={audioEl.ref} class="hidden" preload="metadata" />
         </div>
       </div>
     </MetaProvider>
