@@ -4,6 +4,24 @@ import { Dynamic } from "solid-js/web";
 import { DataRow, HeaderRow } from "./Row";
 import type { ColumnDefs, FieldsTypes } from "./types";
 
+const groupInPlace = <T extends Record<string, any>, K extends keyof T>(
+  data: T[],
+  groupKey: K,
+) =>
+  data.reduce(
+    (acc, item) => {
+      const key = String(item[groupKey]);
+      const lastGroup = acc[acc.length - 1];
+      if (lastGroup?.key === key) {
+        lastGroup.items.push(item);
+      } else {
+        acc.push({ key: key, items: [item] });
+      }
+      return acc;
+    },
+    [] as { key: string; items: T[] }[],
+  );
+
 export const DataTable = <
   T extends Record<string, any>,
   K extends keyof T,
@@ -20,22 +38,9 @@ export const DataTable = <
   }) => JSX.Element;
   groupColumnSize?: string;
 }) => {
-  const groupedData = createMemo(() => {
-    if (!props.groupBy) return [];
-    return props.data.reduce(
-      (acc, x) => {
-        const key = String(x[props.groupBy!]);
-        const lastGroup = acc[acc.length - 1];
-        if (lastGroup && lastGroup.key === key) {
-          lastGroup.items.push(x);
-        } else {
-          acc.push({ key: key, items: [x] });
-        }
-        return acc;
-      },
-      [] as { key: string; items: T[] }[],
-    );
-  });
+  const groupedData = createMemo(() =>
+    props.groupBy ? groupInPlace(props.data, props.groupBy) : [],
+  );
 
   const orderedColumns = createMemo(() => {
     return props.columns.order
