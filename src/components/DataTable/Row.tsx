@@ -7,7 +7,7 @@ import { type FieldsTypes } from "./types";
 
 const Title = propsOverride("div", {
   "data-title": true,
-  class: "overflow-x-hidden text-[110%] text-nowrap overflow-ellipsis",
+  class: "overflow-x-hidden text-nowrap overflow-ellipsis",
 });
 
 export const RowContext = createContext<{ rowIndex: number }>();
@@ -16,7 +16,7 @@ export const HeaderRow = <T, K extends keyof T>(props: {
   columns: FieldsTypes<T, K>[];
 }) => {
   return (
-    <div data-row data-row-index={-1} class="contents">
+    <div data-row data-row-index={-1} class="contents *:text-sm">
       <For each={props.columns}>
         {(column, i) => (
           <LiteralCell index={i()}>
@@ -38,9 +38,18 @@ export const DataRow = <T, K extends keyof T>(props: {
     <div
       data-row
       data-row-index={props.index}
-      class="grid cursor-pointer grid-cols-subgrid px-1 text-sm select-none odd:bg-blue-100/50"
+      tabindex={2}
+      class="odd:*:bg-alt *:bg-primary grid cursor-pointer grid-cols-subgrid text-sm select-none"
       style={{ "grid-column": "1 / -1" }}
-      onDblClick={() => props.onRowDblClick(props.row)}
+      onDblClick={(e) => {
+        e.preventDefault();
+        e.currentTarget.focus();
+        return props.onRowDblClick(props.row);
+      }}
+      onKeyPress={(e) => {
+        if (document.activeElement !== e.currentTarget) return;
+        if (e.key === "Enter") props.onRowDblClick(props.row);
+      }}
     >
       <RowContext.Provider value={{ rowIndex: props.index }}>
         <For each={props.columns}>

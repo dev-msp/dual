@@ -46,12 +46,10 @@ export const DataTable = <
     return props.columns.order
       .reduce(
         (xs, x) => {
-          if (props.groupBy && x === props.groupBy) return xs;
-          if (x in props.columns.fields) {
-            const col = props.columns.fields[x];
-            if (!col?.hide) {
-              xs.push({ ...props.columns.fields[x], accessorKey: x });
-            }
+          if (props.groupBy === x) return xs;
+          const col = props.columns.fields[x];
+          if (!col?.hide) {
+            xs.push({ ...col, accessorKey: x });
           }
           return xs;
         },
@@ -72,13 +70,13 @@ export const DataTable = <
 
   return (
     <div
-      class="relative grid min-h-full gap-x-2 bg-inherit p-2 **:data-title:font-bold"
+      class="primary relative grid min-h-full gap-x-2 p-2 first:-mt-2 **:data-title:font-medium"
       style={{
         "grid-template-rows": "min-content auto",
         "grid-template-columns": gridTemplateColumns(),
       }}
     >
-      <div class="sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid bg-inherit py-2">
+      <div class="primary sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid gap-2">
         {props.groupBy && <div class="col-start-1 row-start-1"></div>}
         <div
           class="grid"
@@ -89,7 +87,7 @@ export const DataTable = <
         >
           <HeaderRow columns={orderedColumns()} />
         </div>
-        <div class="relative col-span-full row-start-2 h-[0.5px] bg-gray-700" />
+        <div class="bg-invert relative col-span-full row-start-2 h-[0.5px]" />
       </div>
 
       {props.groupBy && props.GroupComponent ? (

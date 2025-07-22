@@ -26,6 +26,7 @@ export const DataCell = <T, K extends keyof T>(props: {
   if (!context) {
     throw new Error("DataCell must be used within a RowContext");
   }
+  const value = () => props.row[props.column.accessorKey];
   return props.column.cell ? (
     <Dynamic
       component={props.column.cell}
@@ -33,16 +34,12 @@ export const DataCell = <T, K extends keyof T>(props: {
       data-row-index={context.rowIndex}
       data-col-index={props.index}
       class={props.class}
-      classList={{}}
-      style={{
-        "grid-column": props.index + 1,
-        width: props.column.size,
-      }}
+      style={{ "grid-column": props.index + 1 }}
       row={props.row}
-      value={props.row[props.column.accessorKey]}
+      value={value()}
       absoluteRowIndex={context.rowIndex}
     />
   ) : (
-    String(props.row[props.column.accessorKey] ?? "")
+    String(value() ?? "")
   );
 };

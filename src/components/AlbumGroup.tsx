@@ -18,51 +18,35 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
   onRowDblClick: (item: T) => void;
 }) => {
   const tracks = createMemo(() => props.items);
-  const albumName = createMemo(
-    () => tracks()[0]?.album || `Album ${props.groupKey}`,
-  );
+  const albumName = createMemo(() => tracks()[0]?.album || `Unknown`);
   const albumArtUrl = createMemo(() => `/api/albums/${props.groupKey}/artwork`);
 
   const artRowSpan = createMemo(() =>
     tracks().length > 0 ? tracks().length : 1,
   );
 
-  const numDataColumns = createMemo(() => props.columns.length);
+  const nCols = createMemo(() => props.columns.length);
 
   return (
-    <div
-      data-album-group
-      class="col-span-full grid gap-x-2 pt-6"
-      style={{
-        "grid-template-columns": "subgrid",
-        "grid-column": "1 / -1",
-      }}
-    >
+    <div data-album-group class="col-span-full grid grid-cols-subgrid pt-6">
       <div
-        class="flex pb-8"
-        style={{
-          "grid-column": "1",
-          "grid-row": `span ${artRowSpan()}`,
-          "min-height": "80px",
-        }}
+        class="col-1 flex min-h-[80px] pb-8"
+        style={{ "grid-row": `span ${artRowSpan()}` }}
       >
         <img
           src={albumArtUrl()}
           alt={albumName()}
-          class="h-auto max-h-[300px] w-full max-w-[300px] rounded-sm border border-gray-400 object-cover shadow-lg shadow-gray-400"
+          class="h-auto max-h-[300px] w-full max-w-[300px] rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
         />
       </div>
 
-      <div style={{ "grid-column": `2 / span ${numDataColumns()}` }}>
+      <div style={{ "grid-column": `2 / span ${nCols()}` }}>
         <Title class="mb-2 text-xl">{albumName()}</Title>
       </div>
 
       <div
-        class="grid"
-        style={{
-          "grid-column": `2 / span ${numDataColumns()}`,
-          "grid-template-columns": "subgrid",
-        }}
+        class="bg-dark/40 dark:bg-light/40 grid grid-cols-subgrid gap-x-[1px]"
+        style={{ "grid-column": `2 / span ${nCols()}` }}
       >
         <For each={tracks()}>
           {(row, i) => (

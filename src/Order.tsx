@@ -71,22 +71,21 @@ export const Order = (props: OrderProps) => {
     });
   };
   return (
-    <div class="flex w-full flex-wrap items-start gap-2 text-sm">
+    <div class="flex w-full flex-wrap items-start gap-2 text-sm select-none">
       <For each={orderedOptions()}>
         {(option) => (
           <div
-            class="rounded-2xl px-2 py-1"
-            classList={{
-              "border border-blue-50": !option.selected,
-              "text-gray-900 bg-blue-50": option.selected,
+            tabindex={1}
+            data-selected={option.selected}
+            class="primary rounded-2xl px-2 py-1"
+            onKeyPress={(e) => {
+              if (e.target === document.activeElement && e.key === " ") {
+                props.onClick({ type: "toggle", field: option.field });
+              }
             }}
             onClick={(e) => onClickOption(e, option)}
           >
-            <span
-              classList={{
-                "font-bold": option.selected,
-              }}
-            >
+            <span classList={{ "font-bold": option.selected }}>
               {orderDisplay[option.field] ?? option.field}
             </span>
             <Show when={option.direction}>

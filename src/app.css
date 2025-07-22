@@ -3,14 +3,53 @@
 
 @tailwind utilities;
 
-:root {
-  --bg: theme("colors.blue.50");
-  --fg: theme("colors.gray.900");
+@theme {
+  --color-light: theme("colors.blue.50");
+  --color-light-alt: theme("colors.blue.100");
+
+  --color-dark: theme("colors.gray.900");
+  --color-dark-alt: theme("colors.gray.800");
+}
+
+@utility inverted {
+  @apply bg-dark text-light dark:bg-light dark:text-dark;
+}
+
+@utility primary {
+  @apply bg-primary text-primary;
+  @apply border-dark dark:border-light;
+
+  @apply data-[selected='true']:inverted;
+}
+
+@utility bg-primary {
+  @apply bg-light dark:bg-dark;
+}
+
+@utility text-primary {
+  @apply text-dark dark:text-light;
+}
+
+@utility bg-alt {
+  @apply bg-light-alt dark:bg-dark-alt;
+}
+
+@utility text-alt {
+  @apply text-dark-alt dark:text-light-alt;
+}
+
+@utility bg-invert {
+  @apply bg-dark dark:bg-light;
+}
+
+@utility text-invert {
+  @apply text-light dark:text-dark;
 }
 
 body {
+  @apply bg-primary text-primary;
+
   font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
-  background-color: var(--bg);
   color: var(--fg);
   font-size: 15px;
 }
@@ -20,17 +59,12 @@ body {
 }
 
 main {
-  padding: 1rem; /* Instead of @apply p-4 */
   display: flex;
   flex-direction: column;
 }
 
 @media (min-width: 480px) {
-  h1 {
-    max-width: none;
-  }
+  h1 { max-width: none; }
 
-  p {
-    max-width: none;
-  }
+  p { max-width: none; }
 }

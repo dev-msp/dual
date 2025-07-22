@@ -9,7 +9,7 @@ import { type ColumnDefs } from "./DataTable/types";
 
 const NoWrap = propsOverride("div", {
   class:
-    "overflow-hidden py-[3px] text-left overflow-ellipsis whitespace-nowrap",
+    "overflow-hidden py-[3px] px-2 text-left overflow-ellipsis whitespace-nowrap",
 });
 
 const createTrackColumns = <Keys extends keyof Track>(
@@ -39,19 +39,13 @@ const createTrackColumns = <Keys extends keyof Track>(
         accessorKey: "track",
         header: "Track",
         size: "min-content",
-        cell: (props) => (
-          <NoWrap>
-            {props.value
-              ? [props.row.disc, props.value].filter((x) => !!x).join("x")
-              : ""}
-          </NoWrap>
-        ),
+        cell: (props) => <NoWrap> {props.value} </NoWrap>,
       },
       title: {
         accessorKey: "title",
         header: "Title",
-        size: "2fr",
-        cell: (props) => <NoWrap class="font-medium">{props.value}</NoWrap>,
+        size: "3fr",
+        cell: (props) => <NoWrap>{props.value}</NoWrap>,
       },
       length: {
         accessorKey: "length",
@@ -69,7 +63,7 @@ const createTrackColumns = <Keys extends keyof Track>(
       albumartist: {
         accessorKey: "albumartist",
         header: "Album artist",
-        size: "1fr",
+        size: "2fr",
         cell: (props) => <NoWrap>{props.value ?? "-"}</NoWrap>,
       },
       album: {
@@ -119,16 +113,18 @@ export const TrackList = (props: {
   const albumArtColumnSize = "calc(300px + 2rem)";
 
   return (
-    <DataTable
-      groupBy="album_id"
-      GroupComponent={AlbumGroup}
-      groupColumnSize={albumArtColumnSize}
-      onRowDblClick={(row: Track) => {
-        console.log(`Double-clicked track: ${row.title} by ${row.artist}`);
-        props.onPlay(row);
-      }}
-      data={props.tracks}
-      columns={columns()}
-    />
+    <div tabindex={2}>
+      <DataTable
+        groupBy="album_id"
+        GroupComponent={AlbumGroup}
+        groupColumnSize={albumArtColumnSize}
+        onRowDblClick={(row: Track) => {
+          console.log(`Double-clicked track: ${row.title} by ${row.artist}`);
+          props.onPlay(row);
+        }}
+        data={props.tracks}
+        columns={columns()}
+      />
+    </div>
   );
 };
