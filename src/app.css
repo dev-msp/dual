@@ -6,20 +6,24 @@
 @theme {
   --color-light: theme("colors.blue.50");
   --color-light-alt: theme("colors.blue.100");
+  --color-light-accent: theme("colors.blue.200");
 
   --color-dark: theme("colors.gray.900");
   --color-dark-alt: theme("colors.gray.800");
-}
-
-@utility inverted {
-  @apply bg-dark text-light dark:bg-light dark:text-dark;
+  --color-dark-accent: theme("colors.blue.900");
 }
 
 @utility primary {
   @apply bg-primary text-primary;
   @apply border-dark dark:border-light;
 
-  @apply data-[selected='true']:inverted;
+  svg & {
+    @apply fill-light stroke-dark dark:fill-dark dark:stroke-light;
+  }
+
+  @variant data-[selected='true'] {
+    @apply bg-alt border text-dark-accent border-dark-accent dark:border-light-accent dark:text-light-accent;
+  }
 }
 
 @utility bg-primary {
@@ -28,6 +32,14 @@
 
 @utility text-primary {
   @apply text-dark dark:text-light;
+}
+
+@utility fill-primary {
+  @apply fill-dark dark:fill-light;
+}
+
+@utility stroke-primary {
+  @apply stroke-dark dark:stroke-light;
 }
 
 @utility bg-alt {

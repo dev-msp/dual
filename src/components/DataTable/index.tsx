@@ -1,10 +1,25 @@
-import { createMemo, For, type JSX } from "solid-js";
+import { createMemo, For, type Component } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { DataRow, HeaderRow } from "./Row";
 import type { ColumnDefs, FieldsTypes } from "./types";
 
-const groupInPlace = <T extends Record<string, any>, K extends keyof T>(
+type Rec = Record<string, any>;
+
+type TableProps<T extends Rec, K extends keyof T> = {
+  data: T[];
+  onRowDblClick: (item: T) => void;
+  columns: ColumnDefs<T, K>;
+  groupBy?: K;
+  GroupComponent?: Component<{
+    groupKey: string;
+    items: T[];
+    columns: FieldsTypes<T, K>[];
+    onRowDblClick: (item: T) => void;
+  }>;
+  groupColumnSize?: string;
+};
+const groupInPlace = <T extends Rec, K extends keyof T>(
   data: T[],
   groupKey: K,
 ) =>
@@ -22,22 +37,9 @@ const groupInPlace = <T extends Record<string, any>, K extends keyof T>(
     [] as { key: string; items: T[] }[],
   );
 
-export const DataTable = <
-  T extends Record<string, any>,
-  K extends keyof T,
->(props: {
-  data: T[];
-  onRowDblClick: (item: T) => void;
-  columns: ColumnDefs<T, K>;
-  groupBy?: K;
-  GroupComponent?: (props: {
-    groupKey: string;
-    items: T[];
-    columns: FieldsTypes<T, K>[];
-    onRowDblClick: (item: T) => void;
-  }) => JSX.Element;
-  groupColumnSize?: string;
-}) => {
+export const DataTable = <T extends Rec, K extends keyof T>(
+  props: TableProps<T, K>,
+) => {
   const groupedData = createMemo(() =>
     props.groupBy ? groupInPlace(props.data, props.groupBy) : [],
   );
@@ -79,11 +81,8 @@ export const DataTable = <
       <div class="primary sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid gap-2">
         {props.groupBy && <div class="col-start-1 row-start-1"></div>}
         <div
-          class="grid"
-          style={{
-            "grid-column": props.groupBy ? "2 / -1" : "1 / -1",
-            "grid-template-columns": "subgrid",
-          }}
+          class="grid grid-cols-subgrid"
+          style={{ "grid-column": props.groupBy ? "2 / -1" : "1 / -1" }}
         >
           <HeaderRow columns={orderedColumns()} />
         </div>

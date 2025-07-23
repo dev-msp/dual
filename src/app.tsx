@@ -13,6 +13,7 @@ import {
 import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
+import { Player } from "./components/Player";
 import { TrackList } from "./components/TrackList";
 import { observable } from "./lib/reactive";
 import { elementStream } from "./lib/reactive/dom";
@@ -51,22 +52,18 @@ type ListState = {
   error: Error | null;
 };
 
+const initialOrder: ListState["order"] = {
+  albumartist: "asc",
+  original_year: "desc",
+  disc: "asc",
+  track: "asc",
+};
+
 const [trackList, setTrackList] = createStore<ListState>({
   tracks: {},
   listing: [],
   selection: {},
-  // order: [
-  //   { field: "albumartist", direction: "asc" },
-  //   { field: "original_year", direction: "desc" },
-  //   { field: "disc", direction: "asc" },
-  //   { field: "track", direction: "asc" },
-  // ],
-  order: {
-    albumartist: "asc",
-    original_year: "desc",
-    disc: "asc",
-    track: "asc",
-  },
+  order: initialOrder,
   loading: false,
   error: null,
 });
@@ -89,9 +86,8 @@ export const App = () => {
     trackList.listing.map((id) => trackList.tracks[id]),
   );
 
-  const order = createMemo(() => {
-    console.log("order changed!");
-    return ORDER_OPTIONS.reduce(
+  const order = createMemo(() =>
+    ORDER_OPTIONS.reduce(
       (xs, x) => {
         const direction = trackList.order[x];
         if (direction) {
@@ -100,12 +96,8 @@ export const App = () => {
         return xs;
       },
       [] as { field: keyof Track; direction: "asc" | "desc" }[],
-    );
-  });
-
-  createEffect(() => {
-    console.log(order());
-  });
+    ),
+  );
 
   const [tracksFromDb] = createResource(
     order,
@@ -127,7 +119,6 @@ export const App = () => {
   );
 
   createEffect(() => {
-    console.log("fetched!");
     const fetched = tracksFromDb();
     setTrackList(
       "listing",
@@ -180,6 +171,7 @@ export const App = () => {
       <div class="mx-auto flex h-full w-7/8 max-w-[1600px] flex-col p-4 max-md:w-full">
         <div class="flex flex-row items-start p-4">
           <Order
+            onReset={() => setTrackList("order", initialOrder)}
             onClick={(ch) => {
               setTrackList("order", ch.field, nextDirection);
               if (ch.type === "replace") {
@@ -203,9 +195,18 @@ export const App = () => {
           </div>
         </div>
 
-        <div id="player">
-          <audio ref={audioEl.ref} class="hidden" preload="metadata" />
-        </div>
+        <Player
+          ref={audioEl.ref}
+          onPlayPause={() => {
+            if (audioEl()?.paused) {
+              audioEl()
+                ?.play()
+                .catch(() => console.error("Problem playing"));
+            } else {
+              audioEl()?.pause();
+            }
+          }}
+        />
       </div>
     </MetaProvider>
   );

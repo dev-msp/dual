@@ -26,6 +26,7 @@ export type OrderProps = {
   value: Ordering[];
   options: Ordering["field"][];
   onClick: (ch: OrderChange) => void;
+  onReset: () => void;
 };
 
 export const nextDirection = (direction?: "asc" | "desc") => {
@@ -48,6 +49,34 @@ type OrderWithSelection = {
 export type OrderChange = {
   type: "append" | "replace" | "toggle";
   field: keyof Track;
+};
+
+const OrderOption = (props: {
+  value: OrderWithSelection;
+  onClick: (evt: MouseEvent, ows: OrderWithSelection) => void;
+}) => {
+  return (
+    <div
+      tabindex={1}
+      data-selected={props.value.selected}
+      class="primary rounded-2xl px-2 py-1"
+      onKeyPress={(e) => {
+        if (e.target === document.activeElement && e.key === " ") {
+          props.onClick(e, { type: "toggle", field: props.value.field });
+        }
+      }}
+      onClick={(e) => props.onClick(e, props.value)}
+    >
+      <span classList={{ "font-bold": props.value.selected }}>
+        {orderDisplay[props.value.field] ?? props.value.field}
+      </span>
+      <Show when={props.value.direction}>
+        {(dir) => (
+          <span class="font-bold">{dir() === "asc" ? "\u2191" : "\u2193"}</span>
+        )}
+      </Show>
+    </div>
+  );
 };
 
 export const Order = (props: OrderProps) => {
@@ -73,32 +102,24 @@ export const Order = (props: OrderProps) => {
   return (
     <div class="flex w-full flex-wrap items-start gap-2 text-sm select-none">
       <For each={orderedOptions()}>
-        {(option) => (
-          <div
-            tabindex={1}
-            data-selected={option.selected}
-            class="primary rounded-2xl px-2 py-1"
-            onKeyPress={(e) => {
-              if (e.target === document.activeElement && e.key === " ") {
-                props.onClick({ type: "toggle", field: option.field });
-              }
-            }}
-            onClick={(e) => onClickOption(e, option)}
-          >
-            <span classList={{ "font-bold": option.selected }}>
-              {orderDisplay[option.field] ?? option.field}
-            </span>
-            <Show when={option.direction}>
-              {(dir) => (
-                <span class="font-bold">
-                  {dir() === "asc" ? "\u2191" : "\u2193"}
-                </span>
-              )}
-            </Show>
-          </div>
-        )}
+        {(option) => <OrderOption value={option} onClick={onClickOption} />}
       </For>
-      <div class="float-right text-xl">&#x21BA;</div>
+      <div
+        tabindex={1}
+        onKeyPress={(e) => {
+          if (
+            e.target === document.activeElement &&
+            [" ", "Enter"].includes(e.key)
+          ) {
+            props.onReset();
+          }
+        }}
+        role="button"
+        onClick={props.onReset}
+        class="primary float-right text-xl"
+      >
+        &#x21BA;
+      </div>
     </div>
   );
 };

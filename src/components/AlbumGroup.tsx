@@ -28,11 +28,11 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
   const nCols = createMemo(() => props.columns.length);
 
   return (
-    <div data-album-group class="col-span-full grid grid-cols-subgrid pt-6">
-      <div
-        class="col-1 flex min-h-[80px] pb-8"
-        style={{ "grid-row": `span ${artRowSpan()}` }}
-      >
+    <div
+      data-album-group
+      class="col-span-full grid grid-cols-subgrid gap-x-6 pt-6"
+    >
+      <div class="col-1 pb-8" style={{ "grid-row": `span ${artRowSpan()}` }}>
         <img
           src={albumArtUrl()}
           alt={albumName()}
@@ -45,7 +45,7 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
       </div>
 
       <div
-        class="bg-dark/40 dark:bg-light/40 grid grid-cols-subgrid gap-x-[1px]"
+        class="bg-dark/20 dark:bg-light/20 grid grid-cols-subgrid gap-x-[1px]"
         style={{ "grid-column": `2 / span ${nCols()}` }}
       >
         <For each={tracks()}>
