@@ -21,6 +21,14 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
   const albumName = createMemo(() => tracks()[0]?.album || `Unknown`);
   const albumArtUrl = createMemo(() => `/api/albums/${props.groupKey}/artwork`);
 
+  const artistName = createMemo(() => {
+    const names = tracks().reduce((acc, track) => {
+      if (track.albumartist) acc.add(track.albumartist);
+      return acc;
+    }, new Set<string>());
+    return names.size > 0 ? Array.from(names).sort().join(", ") : null;
+  });
+
   const artRowSpan = createMemo(() =>
     tracks().length > 0 ? tracks().length : 1,
   );
@@ -33,7 +41,7 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
       class="col-span-full grid grid-cols-subgrid gap-x-6 pt-6"
     >
       <div
-        class="col-1 w-full max-w-[300px] pb-8"
+        class="col-1 w-full max-w-[300px] min-w-[120px] pb-8"
         style={{ "grid-row": `span ${artRowSpan()}` }}
       >
         <img
@@ -41,9 +49,10 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
           alt={albumName()}
           class="h-auto rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
         />
-        <Title class="mt-4 max-md:text-[100%] min-lg:text-lg">
-          {albumName()}
-        </Title>
+        <Title class="mt-4 min-lg:text-lg">{albumName()}</Title>
+        <div class="font-[200] text-pretty italic max-md:text-sm">
+          {artistName()}
+        </div>
       </div>
 
       <div

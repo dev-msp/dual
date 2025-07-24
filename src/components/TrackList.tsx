@@ -1,4 +1,4 @@
-import { createMemo } from "solid-js";
+import { createMemo, For, Match, Switch, type Accessor } from "solid-js";
 
 import { AlbumGroup } from "../components/AlbumGroup";
 import { propsOverride } from "../lib/components";
@@ -93,6 +93,32 @@ const createTrackColumns = <Keys extends keyof Track>(
   };
 };
 
+const AlbumGrid = (props: { albumIds: number[] }) => {
+  return (
+    <div
+      class="grid"
+      style={{
+        "grid-template-columns":
+          "repeat(auto-fill, minmax(200px, max-content))",
+        "grid-template-rows": "repeat(200px)",
+      }}
+    >
+      <For each={props.albumIds}>
+        {(id) => (
+          <div class="p-1">
+            <img
+              src={`/api/albums/${id}/artwork`}
+              alt={`Album cover for album ID ${id}`}
+              class="size-full rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
+              loading="lazy"
+            />
+          </div>
+        )}
+      </For>
+    </div>
+  );
+};
+
 export const TrackList = (props: {
   onPlay: (track: Track) => void;
   tracks: Track[];
@@ -112,19 +138,37 @@ export const TrackList = (props: {
 
   const albumArtColumnSize = "2fr";
 
+  const albumIds: Accessor<number[]> = createMemo(() => {
+    const pile = new Set<number>();
+    props.tracks.forEach((track) => {
+      if (!track.album_id) return;
+      pile.add(track.album_id);
+    });
+    return Array.from(pile).sort();
+  });
+
   return (
-    <div tabindex={2}>
-      <DataTable
-        groupBy="album_id"
-        GroupComponent={AlbumGroup}
-        groupColumnSize={albumArtColumnSize}
-        onRowDblClick={(row: Track) => {
-          console.log(`Double-clicked track: ${row.title} by ${row.artist}`);
-          props.onPlay(row);
-        }}
-        data={props.tracks}
-        columns={columns()}
-      />
-    </div>
+    <Switch>
+      <Match when={false}>{(_) => <AlbumGrid albumIds={albumIds()} />}</Match>
+      <Match when={true}>
+        {(_) => (
+          <div tabindex={2}>
+            <DataTable
+              groupBy="album_id"
+              GroupComponent={AlbumGroup}
+              groupColumnSize={albumArtColumnSize}
+              onRowDblClick={(row: Track) => {
+                console.log(
+                  `Double-clicked track: ${row.title} by ${row.artist}`,
+                );
+                props.onPlay(row);
+              }}
+              data={props.tracks}
+              columns={columns()}
+            />
+          </div>
+        )}
+      </Match>
+    </Switch>
   );
 };
