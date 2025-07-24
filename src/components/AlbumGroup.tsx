@@ -8,7 +8,7 @@ import type { FieldsTypes } from "./DataTable/types";
 
 const Title = propsOverride("div", {
   "data-title": true,
-  class: "overflow-x-hidden text-nowrap overflow-ellipsis",
+  class: "",
 });
 
 export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
@@ -32,16 +32,18 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
       data-album-group
       class="col-span-full grid grid-cols-subgrid gap-x-6 pt-6"
     >
-      <div class="col-1 pb-8" style={{ "grid-row": `span ${artRowSpan()}` }}>
+      <div
+        class="col-1 w-full max-w-[300px] pb-8"
+        style={{ "grid-row": `span ${artRowSpan()}` }}
+      >
         <img
           src={albumArtUrl()}
           alt={albumName()}
-          class="h-auto max-h-[300px] w-full max-w-[300px] rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
+          class="h-auto rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
         />
-      </div>
-
-      <div style={{ "grid-column": `2 / span ${nCols()}` }}>
-        <Title class="mb-2 text-xl">{albumName()}</Title>
+        <Title class="mt-4 max-md:text-[100%] min-lg:text-lg">
+          {albumName()}
+        </Title>
       </div>
 
       <div

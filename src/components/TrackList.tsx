@@ -110,7 +110,7 @@ export const TrackList = (props: {
     ]),
   );
 
-  const albumArtColumnSize = "minmax(min-content, 1fr)";
+  const albumArtColumnSize = "2fr";
 
   return (
     <div tabindex={2}>
