@@ -21,10 +21,10 @@ const isNil = (value: unknown): value is null | undefined => {
   return value === null || value === undefined;
 };
 
-const rangeToSql = <T extends number | SQLWrapper>(
+const rangeToSql = (
   col: SQLWrapper,
-  min: T | undefined,
-  max: T | undefined,
+  min?: number | SQLWrapper,
+  max?: number | SQLWrapper,
 ): SQLWrapper => {
   if (!isNil(min) && !isNil(max)) {
     return sql`${col} between ${min} and ${max}`;
@@ -106,7 +106,7 @@ const fallbackClause = (value: string) =>
     ),
   );
 
-export const toQuery = (query: Query) => (db: Db) => {
+export const toQuery = (db: Db, query: Query) => {
   const subquery = db.$with("items_with_score").as(itemsWithScore);
   const q = db
     .with(subquery)
