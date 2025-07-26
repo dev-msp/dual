@@ -1,4 +1,4 @@
 export default {
-  parser: "typescript",
+  // parser: "typescript",
   plugins: [],
 };
