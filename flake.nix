@@ -22,7 +22,6 @@
             eslint_d
             prettierd
             typescript-language-server
-            tailwindcss-language-server
             emmet-language-server
             (pkgs.writeShellApplication {
               name = "pick-op";

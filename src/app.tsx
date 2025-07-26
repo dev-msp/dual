@@ -168,8 +168,11 @@ export const App = () => {
 
   return (
     <MetaProvider>
-      <div class="mx-auto flex h-full w-7/8 max-w-[1600px] flex-col p-4 max-md:w-full">
-        <div class="flex flex-row items-start p-4">
+      <div
+        // class="mx-auto flex h-full w-7/8 max-w-[1600px] flex-col p-4 max-md:w-full"
+        class="app-container"
+      >
+        <div class="order-container">
           <Order
             onReset={() => setTrackList("order", initialOrder)}
             onClick={(ch) => {
@@ -186,27 +189,26 @@ export const App = () => {
           />
         </div>
 
-        <div class="relative h-3/4 grow">
-          <div class="primary absolute h-full w-full overflow-y-scroll">
-            <TrackList
-              onPlay={(x) => setCurrentTrack(x.id)}
-              tracks={tracks()}
-            />
-          </div>
+        {/* <div class="relative h-3/4 grow"> */}
+        <div class="list-container">
+          <TrackList onPlay={(x) => setCurrentTrack(x.id)} tracks={tracks()} />
         </div>
+        {/* </div> */}
 
-        <Player
-          ref={audioEl.ref}
-          onPlayPause={() => {
-            if (audioEl()?.paused) {
-              audioEl()
-                ?.play()
-                .catch(() => console.error("Problem playing"));
-            } else {
-              audioEl()?.pause();
-            }
-          }}
-        />
+        <div class="player-container">
+          <Player
+            ref={audioEl.ref}
+            onPlayPause={() => {
+              if (audioEl()?.paused) {
+                audioEl()
+                  ?.play()
+                  .catch(() => console.error("Problem playing"));
+              } else {
+                audioEl()?.pause();
+              }
+            }}
+          />
+        </div>
       </div>
     </MetaProvider>
   );

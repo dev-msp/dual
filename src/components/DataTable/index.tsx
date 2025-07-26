@@ -1,4 +1,4 @@
-import { createMemo, For, type Component } from "solid-js";
+import { createMemo, For, Match, Switch, type Component } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
 import { DataRow, HeaderRow } from "./Row";
@@ -70,49 +70,71 @@ export const DataTable = <T extends Rec, K extends keyof T>(
       : dataColumnsTemplate;
   });
 
+  const nonGroupedFallback = (
+    <For each={props.data}>
+      {(row, i) => (
+        <DataRow
+          index={i()}
+          row={row}
+          columns={orderedColumns()}
+          onRowDblClick={props.onRowDblClick}
+        />
+      )}
+    </For>
+  );
+
   return (
     <div
-      class="primary relative grid min-h-full gap-x-2 p-2 first:-mt-2 **:data-title:font-medium"
+      // class="primary relative grid min-h-full gap-x-2 p-2 first:-mt-2 **:data-title:font-medium"
+      data-grouped={!!props.groupBy}
+      class="data-table"
       style={{
         "grid-template-rows": "min-content auto",
         "grid-template-columns": gridTemplateColumns(),
       }}
     >
-      <div class="primary sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid gap-2">
-        {props.groupBy && <div class="col-start-1 row-start-1"></div>}
+      <div
+        // class="primary sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid gap-2"
+        class="table-header"
+      >
+        {props.groupBy && (
+          <div
+            data-cosmetic
+            style={{ "grid-column-start": "1", "grid-row-start": "1" }}
+          ></div>
+        )}
         <div
-          class="grid grid-cols-subgrid"
-          style={{ "grid-column": props.groupBy ? "2 / -1" : "1 / -1" }}
+          // TODO use data-grouped to decide grid column in css
+          // class="grid grid-cols-subgrid"
+          // style={{ "grid-column": props.groupBy ? "2 / -1" : "1 / -1" }}
+          class="row-subgrid"
         >
           <HeaderRow columns={orderedColumns()} />
         </div>
-        <div class="bg-invert relative col-span-full row-start-2 h-[0.5px]" />
+        <div
+          data-cosmetic
+          class="row-divider"
+          // class="bg-invert relative col-span-full row-start-2 h-[0.5px]"
+        />
       </div>
 
-      {props.groupBy && props.GroupComponent ? (
-        <For each={groupedData()}>
-          {(group) => (
-            <Dynamic
-              component={props.GroupComponent}
-              groupKey={group.key}
-              items={group.items}
-              columns={orderedColumns()}
-              onRowDblClick={props.onRowDblClick}
-            />
+      <Switch fallback={nonGroupedFallback}>
+        <Match when={props.groupBy && props.GroupComponent}>
+          {(_) => (
+            <For each={groupedData()}>
+              {(group) => (
+                <Dynamic
+                  component={props.GroupComponent}
+                  groupKey={group.key}
+                  items={group.items}
+                  columns={orderedColumns()}
+                  onRowDblClick={props.onRowDblClick}
+                />
+              )}
+            </For>
           )}
-        </For>
-      ) : (
-        <For each={props.data}>
-          {(row, i) => (
-            <DataRow
-              index={i()}
-              row={row}
-              columns={orderedColumns()}
-              onRowDblClick={props.onRowDblClick}
-            />
-          )}
-        </For>
-      )}
+        </Match>
+      </Switch>
     </div>
   );
 };

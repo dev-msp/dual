@@ -1,3 +1,4 @@
+/*
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
@@ -57,9 +58,10 @@
 @utility text-invert {
   @apply text-light dark:text-dark;
 }
+*/
 
 body {
-  @apply bg-primary text-primary;
+  /* @apply bg-primary text-primary; */
 
   font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
   color: var(--fg);

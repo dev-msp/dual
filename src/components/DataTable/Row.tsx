@@ -7,7 +7,8 @@ import { type FieldsTypes } from "./types";
 
 const Title = propsOverride("div", {
   "data-title": true,
-  class: "overflow-x-hidden text-nowrap overflow-ellipsis",
+  // class: "overflow-x-hidden text-nowrap overflow-ellipsis",
+  class: "",
 });
 
 export const RowContext = createContext<{ rowIndex: number }>();
@@ -42,7 +43,11 @@ export const HeaderRow = <T, K extends keyof T>(props: {
       <For each={props.columns}>
         {(column, i) => (
           <LiteralCell index={i()}>
-            <Title>{column.header}</Title>
+            <Title
+            // TODO use data attr
+            >
+              {column.header}
+            </Title>
           </LiteralCell>
         )}
       </For>

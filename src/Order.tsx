@@ -59,7 +59,8 @@ const OrderOption = (props: {
     <div
       tabindex={1}
       data-selected={props.value.selected}
-      class="primary rounded-2xl px-2 py-1"
+      // class="primary rounded-2xl px-2 py-1"
+      class="option"
       onKeyPress={(e) => {
         if (e.target === document.activeElement && e.key === " ") {
           props.onClick(e, { type: "toggle", field: props.value.field });
@@ -67,13 +68,9 @@ const OrderOption = (props: {
       }}
       onClick={(e) => props.onClick(e, props.value)}
     >
-      <span classList={{ "font-bold": props.value.selected }}>
-        {orderDisplay[props.value.field] ?? props.value.field}
-      </span>
+      <span>{orderDisplay[props.value.field] ?? props.value.field}</span>
       <Show when={props.value.direction}>
-        {(dir) => (
-          <span class="font-bold">{dir() === "asc" ? "\u2191" : "\u2193"}</span>
-        )}
+        {(dir) => <span>{dir() === "asc" ? "\u2191" : "\u2193"}</span>}
       </Show>
     </div>
   );
@@ -100,7 +97,10 @@ export const Order = (props: OrderProps) => {
     });
   };
   return (
-    <div class="flex w-full flex-wrap items-start gap-2 text-sm select-none">
+    <div
+      // class="flex w-full flex-wrap items-start gap-2 text-sm select-none"
+      class="order"
+    >
       <For each={orderedOptions()}>
         {(option) => <OrderOption value={option} onClick={onClickOption} />}
       </For>
@@ -116,7 +116,7 @@ export const Order = (props: OrderProps) => {
         }}
         role="button"
         onClick={props.onReset}
-        class="primary float-right text-xl"
+        // class="primary float-right text-xl"
       >
         &#x21BA;
       </div>

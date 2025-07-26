@@ -84,7 +84,7 @@ const createTrackColumns = <Keys extends keyof Track>(
         header: "Score",
         size: "1fr",
         cell: (props) => (
-          <NoWrap class="text-left">
+          <NoWrap style={{ "text-align": "left" }}>
             {props.value !== null ? props.value.toFixed(2) : "-"}
           </NoWrap>
         ),
@@ -96,20 +96,23 @@ const createTrackColumns = <Keys extends keyof Track>(
 const AlbumGrid = (props: { albumIds: number[] }) => {
   return (
     <div
-      class="grid"
-      style={{
-        "grid-template-columns":
-          "repeat(auto-fill, minmax(200px, max-content))",
-        "grid-template-rows": "repeat(200px)",
-      }}
+      // class="grid"
+      // style={{
+      //   "grid-template-columns":
+      //     "repeat(auto-fill, minmax(200px, max-content))",
+      //   "grid-template-rows": "repeat(200px)",
+      // }}
+      class="album-grid"
     >
       <For each={props.albumIds}>
         {(id) => (
-          <div class="p-1">
+          <div
+          // class="p-1"
+          >
             <img
               src={`/api/albums/${id}/artwork`}
               alt={`Album cover for album ID ${id}`}
-              class="size-full rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
+              // class="size-full rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
               loading="lazy"
             />
           </div>

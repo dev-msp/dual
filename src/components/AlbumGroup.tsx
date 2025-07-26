@@ -38,27 +38,42 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
   return (
     <div
       data-album-group
-      class="col-span-full grid grid-cols-subgrid pt-6 min-lg:gap-x-6"
+      // class="col-span-full grid grid-cols-subgrid pt-6 min-lg:gap-x-6"
+      class="album-group"
     >
       <div
-        class="col-1 w-full max-w-[300px] min-w-[120px] pb-8"
+        // class="col-1 w-full max-w-[300px] min-w-[120px] pb-8"
+        class="info"
         style={{ "grid-row": `span ${artRowSpan()}` }}
       >
         <img
           src={albumArtUrl()}
           alt={albumName()}
-          class="h-auto rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
+          // class="h-auto rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
+          class="artwork"
         />
-        <div class="w-[108%]">
-          <Title class="mt-4 min-lg:text-lg">{albumName()}</Title>
-          <div class="font-thin text-pretty min-lg:text-[108%]">
+        <div
+          // class="w-[108%]"
+          class="credits"
+        >
+          <Title
+          // TODO use data attr
+          // class="mt-4 min-lg:text-lg"
+          >
+            {albumName()}
+          </Title>
+          <div
+            data-subtitle
+            // class="font-thin text-pretty min-lg:text-[108%]"
+          >
             {artistName()}
           </div>
         </div>
       </div>
 
       <div
-        class="bg-dark/20 dark:bg-light/20 grid grid-cols-subgrid gap-x-[1px]"
+        // class="bg-dark/20 dark:bg-light/20 grid grid-cols-subgrid gap-x-[1px]"
+        class="rows"
         style={{ "grid-column": `2 / span ${nCols()}` }}
       >
         <For each={tracks()}>
