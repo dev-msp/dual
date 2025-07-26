@@ -38,7 +38,7 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
   return (
     <div
       data-album-group
-      class="col-span-full grid grid-cols-subgrid gap-x-6 pt-6"
+      class="col-span-full grid grid-cols-subgrid pt-6 min-lg:gap-x-6"
     >
       <div
         class="col-1 w-full max-w-[300px] min-w-[120px] pb-8"
@@ -49,9 +49,11 @@ export const AlbumGroup = <T extends Track, K extends keyof T>(props: {
           alt={albumName()}
           class="h-auto rounded-sm border-gray-400 object-cover shadow-lg not-dark:border not-dark:shadow-gray-400"
         />
-        <Title class="mt-4 min-lg:text-lg">{albumName()}</Title>
-        <div class="font-[200] text-pretty italic max-md:text-sm">
-          {artistName()}
+        <div class="w-[108%]">
+          <Title class="mt-4 min-lg:text-lg">{albumName()}</Title>
+          <div class="font-thin text-pretty min-lg:text-[108%]">
+            {artistName()}
+          </div>
         </div>
       </div>
 
