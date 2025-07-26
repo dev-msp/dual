@@ -1,33 +1,16 @@
 import { isFunction } from "rxjs/internal/util/isFunction";
-import {
-  type Component,
-  type ComponentProps,
-  type JSX,
-  type ValidComponent,
-} from "solid-js";
+import { type Component, type ComponentProps, type JSX } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-type PropsWithClass<T extends ValidComponent> = Extract<
-  ComponentProps<T>,
-  { class?: string }
->;
-
-export const propsOverride = <E extends C, C extends { class?: string }>(
+export const propsOverride = <E extends C, C extends object>(
   comp: Component<C> | keyof JSX.IntrinsicElements,
   propsOverride:
     | Partial<E>
-    | ((props: PropsWithClass<typeof comp>) => Partial<E>),
-): Component<PropsWithClass<typeof comp>> => {
-  return (props: PropsWithClass<typeof comp>) => {
+    | ((props: ComponentProps<typeof comp>) => Partial<E>),
+): Component<E> => {
+  return (props: ComponentProps<typeof comp>) => {
     const newProps = () =>
       isFunction(propsOverride) ? propsOverride(props) : propsOverride;
-    return (
-      <Dynamic
-        component={comp}
-        {...props}
-        {...newProps()}
-        class={`${newProps().class} ${props.class || ""}`}
-      />
-    );
+    return <Dynamic component={comp} {...props} {...newProps()} />;
   };
 };

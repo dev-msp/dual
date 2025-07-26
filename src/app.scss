@@ -1,0 +1,198 @@
+@use "@picocss/pico/scss/pico";
+@use "@picocss/pico/scss/colors/utilities";
+
+/*
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@tailwind utilities;
+
+@theme {
+  --color-light: theme("colors.blue.50");
+  --color-light-alt: theme("colors.blue.100");
+  --color-light-accent: theme("colors.blue.200");
+
+  --color-dark: theme("colors.gray.900");
+  --color-dark-alt: theme("colors.gray.800");
+  --color-dark-accent: theme("colors.blue.900");
+}
+
+@utility primary {
+  @apply bg-primary text-primary;
+  @apply border-dark dark:border-light;
+
+  svg & {
+    @apply fill-light stroke-dark dark:fill-dark dark:stroke-light;
+  }
+
+  @variant data-[selected='true'] {
+    @apply bg-alt border text-dark-accent border-dark-accent dark:border-light-accent dark:text-light-accent;
+  }
+}
+
+@utility bg-primary {
+  @apply bg-light dark:bg-dark;
+}
+
+@utility text-primary {
+  @apply text-dark dark:text-light;
+}
+
+@utility fill-primary {
+  @apply fill-dark dark:fill-light;
+}
+
+@utility stroke-primary {
+  @apply stroke-dark dark:stroke-light;
+}
+
+@utility bg-alt {
+  @apply bg-light-alt dark:bg-dark-alt;
+}
+
+@utility text-alt {
+  @apply text-dark-alt dark:text-light-alt;
+}
+
+@utility bg-invert {
+  @apply bg-dark dark:bg-light;
+}
+
+@utility text-invert {
+  @apply text-light dark:text-dark;
+}
+*/
+
+:root {
+  --pico-spacing: 0.3rem;
+  --theme-dark-fg: var(--pico-color-azure-200);
+
+  --theme-darkest: var(--pico-color-azure-900);
+  --theme-darker: var(--pico-color-azure-800);
+
+  --theme-bg: var(--theme-darker);
+  --theme-fg: var(--pico-color-azure-200);
+}
+
+body {
+  font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
+  background-color: var(--theme-bg);
+  color: var(--fg);
+  font-size: 15px;
+}
+
+#root {
+  height: 100vh;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 480px) {
+  h1 {
+    max-width: none;
+  }
+  p {
+    max-width: none;
+  }
+}
+
+.app-container {
+  width: 87.5%;
+  height: 100%;
+  margin: 0 auto;
+  max-width: 1600px;
+  padding-top: calc(var(--pico-spacing) * 3);
+
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: min-content 75% 1fr;
+  grid-template-columns: 1fr;
+
+  @media screen and (width <= 1024px) {
+    width: 100%;
+  }
+}
+
+.order {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: start;
+  gap: calc(var(--pico-spacing));
+
+  & [role="button"] {
+    padding: 0;
+    border: unset;
+    background-color: unset;
+  }
+
+  & .option {
+    border-radius: calc(var(--pico-border-radius) * 3);
+    padding: var(--pico-spacing) calc(var(--pico-spacing) * 2);
+    border: 1px var(--pico-color-azure-200) solid;
+  }
+}
+
+.data-table {
+  display: grid;
+
+  & .table-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    grid-column: 1 / -1;
+
+    display: grid;
+    grid-template-columns: subgrid;
+    height: min-content;
+    & [data-title] {
+      font-weight: 400;
+    }
+  }
+
+  &:not([data-grouped]) [data-when-grouped] {
+    display: none;
+  }
+
+  &[data-grouped] .row-subgrid {
+    grid-column: 2 / -1;
+  }
+  & .row-subgrid {
+    grid-column: 1 / -1;
+  }
+}
+
+[data-album-group] {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  padding-top: calc(var(--pico-spacing) * 6);
+
+  @media screen and (width >= 1024px) {
+    column-gap: calc(var(--pico-spacing) * 6);
+  }
+
+  .info {
+    grid-column: 1;
+    width: 100%;
+    min-width: 120px;
+    max-width: 300px;
+    padding-bottom: calc(var(--pico-spacing) * 8);
+  }
+
+  .artwork {
+    height: auto;
+    border-radius: var(--pico-border-radius);
+    border: var(--pico-color-gray-400);
+
+    object-fit: cover;
+  }
+
+  .credits {
+    width: 108%;
+  }
+}

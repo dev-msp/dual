@@ -96,27 +96,23 @@ export const Order = (props: OrderProps) => {
       field: option.field,
     });
   };
+
+  const onKey = (e: KeyboardEvent) => {
+    const isEvent =
+      e.target === document.activeElement && [" ", "Enter"].includes(e.key);
+    if (isEvent) props.onReset();
+  };
+
   return (
-    <div
-      // class="flex w-full flex-wrap items-start gap-2 text-sm select-none"
-      class="order"
-    >
+    <div class="order">
       <For each={orderedOptions()}>
         {(option) => <OrderOption value={option} onClick={onClickOption} />}
       </For>
       <div
         tabindex={1}
-        onKeyPress={(e) => {
-          if (
-            e.target === document.activeElement &&
-            [" ", "Enter"].includes(e.key)
-          ) {
-            props.onReset();
-          }
-        }}
         role="button"
+        onKeyPress={onKey}
         onClick={props.onReset}
-        // class="primary float-right text-xl"
       >
         &#x21BA;
       </div>

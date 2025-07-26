@@ -1,4 +1,4 @@
-import "./app.css";
+import "./app.scss";
 
 import { MetaProvider } from "@solidjs/meta";
 import { of } from "rxjs";
@@ -13,7 +13,6 @@ import {
 import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
-import { Player } from "./components/Player";
 import { TrackList } from "./components/TrackList";
 import { observable } from "./lib/reactive";
 import { elementStream } from "./lib/reactive/dom";
@@ -168,47 +167,38 @@ export const App = () => {
 
   return (
     <MetaProvider>
-      <div
-        // class="mx-auto flex h-full w-7/8 max-w-[1600px] flex-col p-4 max-md:w-full"
-        class="app-container"
-      >
-        <div class="order-container">
-          <Order
-            onReset={() => setTrackList("order", initialOrder)}
-            onClick={(ch) => {
-              setTrackList("order", ch.field, nextDirection);
-              if (ch.type === "replace") {
-                const otherKeys = Object.keys(trackList.order).filter(
-                  (x) => x !== ch.field,
-                ) as (keyof Track)[];
-                setTrackList("order", otherKeys, undefined);
-              }
-            }}
-            value={order()}
-            options={ORDER_OPTIONS}
-          />
-        </div>
+      <div class="app-container" >
 
-        {/* <div class="relative h-3/4 grow"> */}
-        <div class="list-container">
-          <TrackList onPlay={(x) => setCurrentTrack(x.id)} tracks={tracks()} />
-        </div>
-        {/* </div> */}
+        <Order
+          onReset={() => setTrackList("order", initialOrder)}
+          onClick={(ch) => {
+            setTrackList("order", ch.field, nextDirection);
+            if (ch.type === "replace") {
+              const otherKeys = Object.keys(trackList.order).filter(
+                (x) => x !== ch.field,
+              ) as (keyof Track)[];
+              setTrackList("order", otherKeys, undefined);
+            }
+          }}
+          value={order()}
+          options={ORDER_OPTIONS}
+        />
 
-        <div class="player-container">
-          <Player
-            ref={audioEl.ref}
-            onPlayPause={() => {
-              if (audioEl()?.paused) {
-                audioEl()
-                  ?.play()
-                  .catch(() => console.error("Problem playing"));
-              } else {
-                audioEl()?.pause();
-              }
-            }}
-          />
-        </div>
+        <TrackList onPlay={(x) => setCurrentTrack(x.id)} tracks={tracks()} />
+
+        {/* <Player */}
+        {/*   ref={audioEl.ref} */}
+        {/*   onPlayPause={() => { */}
+        {/*     if (audioEl()?.paused) { */}
+        {/*       audioEl() */}
+        {/*         ?.play() */}
+        {/*         .catch(() => console.error("Problem playing")); */}
+        {/*     } else { */}
+        {/*       audioEl()?.pause(); */}
+        {/*     } */}
+        {/*   }} */}
+        {/* /> */}
+
       </div>
     </MetaProvider>
   );

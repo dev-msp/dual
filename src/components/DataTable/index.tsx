@@ -97,12 +97,11 @@ export const DataTable = <T extends Rec, K extends keyof T>(
         // class="primary sticky top-0 z-10 col-span-full grid h-min grid-cols-subgrid gap-2"
         class="table-header"
       >
-        {props.groupBy && (
-          <div
-            data-cosmetic
-            style={{ "grid-column-start": "1", "grid-row-start": "1" }}
-          ></div>
-        )}
+        <div
+          data-when-grouped
+          data-cosmetic
+          style={{ "grid-column-start": "1", "grid-row-start": "1" }}
+        />
         <div
           // TODO use data-grouped to decide grid column in css
           // class="grid grid-cols-subgrid"
