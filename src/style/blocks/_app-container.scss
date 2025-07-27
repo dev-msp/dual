@@ -1,10 +1,6 @@
 .app-container {
   display: grid;
-  width: 87.5%;
-  max-width: 1600px;
   height: 100%;
-  padding-top: var(--space-4);
-  margin: 0 auto;
   grid-auto-flow: column;
   grid-template-columns: 1fr;
   grid-template-rows: min-content minmax(75%, 1fr) min-content;

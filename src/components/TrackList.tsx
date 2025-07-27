@@ -32,7 +32,7 @@ const createTrackColumns = <Keys extends keyof Track>(
       },
       track: {
         accessorKey: "track",
-        header: "Track",
+        header: "",
         size: "min-content",
         cell: (props) => <NoWrap>{props.value}</NoWrap>,
       },
@@ -134,7 +134,7 @@ export const TrackList = (props: {
     ]),
   );
 
-  const albumArtColumnSize = "2fr";
+  const albumArtColumnSize = "auto";
 
   const albumIds: Accessor<number[]> = createMemo(() => {
     const pile = new Set<number>();

@@ -19,7 +19,7 @@
   column-gap: var(--space-1);
 
   @media screen and (width >= 1024px) {
-    column-gap: var(--space-3);
+    column-gap: var(--space-2);
   }
 
   .table-header {
@@ -29,6 +29,7 @@
     z-index: 10;
     top: 0;
     height: min-content;
+    font-size: 110%;
 
     [data-title] {
       font-weight: 700;
@@ -39,7 +40,7 @@
     --subgrid-col-start: 1;
 
     column-gap: 1px;
-    font-size: 90%;
+    font-size: 95%;
 
     .cell {
       padding: var(--space-1) var(--space-1);
@@ -61,22 +62,18 @@
 [data-album-group] {
   --spacing: var(--space-3);
 
-  margin-top: var(--spacing);
+  margin-top: var(--space-3);
   column-gap: var(--spacing);
 
   &:first-child {
     margin-top: calc(var(--spacing) / 2);
   }
 
-  @media screen and (width >= 1024px) {
-    --spacing: var(--space-6);
-  }
-
   .rows {
     --subgrid-col-start: 2;
 
     height: min-content;
-    background-color: var(--theme-fg);
+    background-color: color-mix(in srgb, var(--theme-fg), transparent 70%);
     grid-auto-rows: min-content;
     line-height: initial;
 
@@ -97,10 +94,17 @@
     height: auto;
     border: var(--pico-color-gray-400);
     border-radius: var(--pico-border-radius);
+    margin-bottom: var(--spacing);
     object-fit: cover;
   }
 
   .credits {
-    width: 108%;
+    width: 105%;
+    font-weight: 300;
+
+    [data-title] {
+      font-size: 120%;
+      font-weight: 600;
+    }
   }
 }
