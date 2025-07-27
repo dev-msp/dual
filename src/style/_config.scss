@@ -1,0 +1,23 @@
+@use "sass:string";
+@use "@picocss/pico/scss/pico";
+@use "@picocss/pico/scss/colors/utilities";
+
+:root {
+  // theme colors
+  --theme-darkest: var(--pico-color-azure-900);
+  --theme-darker: var(--pico-color-azure-800);
+  --theme-bg: var(--theme-darkest);
+  --theme-fg: var(--pico-color-azure-100);
+
+  // spacing scale [1]
+  @each $size in ( "1" "2" "3" "4" "5" "6" "7" "8" ) {
+    --space-#{$size}: calc(var(--pico-spacing) * #{$size});
+  }
+
+  // pico overrides [1]
+  --pico-spacing: 0.4rem;
+  --pico-background-color: var(--theme-bg);
+  --pico-color: var(--theme-fg);
+  --pico-font-size: 14px;
+  --pico-border-radius: var(--space-2);
+}

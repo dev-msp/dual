@@ -167,7 +167,7 @@ export const App = () => {
 
   return (
     <MetaProvider>
-      <div class="app-container" >
+      <div class="app-container">
         <Order
           onReset={() => setTrackList("order", initialOrder)}
           onClick={(ch) => {
@@ -183,7 +183,9 @@ export const App = () => {
           options={ORDER_OPTIONS}
         />
 
-        <TrackList onPlay={(x) => setCurrentTrack(x.id)} tracks={tracks()} />
+        <div style={{ "overflow-y": "scroll" }}>
+          <TrackList onPlay={(x) => setCurrentTrack(x.id)} tracks={tracks()} />
+        </div>
 
         {/* <Player */}
         {/*   ref={audioEl.ref} */}
@@ -197,7 +199,6 @@ export const App = () => {
         {/*     } */}
         {/*   }} */}
         {/* /> */}
-
       </div>
     </MetaProvider>
   );

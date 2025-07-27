@@ -1,15 +1,9 @@
 import { createContext, For, type ComponentProps, type JSX } from "solid-js";
 
-import { propsOverride } from "../../lib/components";
+import { Title } from "../../lib/components/title";
 
 import { DataCell, LiteralCell } from "./Cell";
 import { type FieldsTypes } from "./types";
-
-const Title = propsOverride("div", {
-  "data-title": true,
-  // class: "overflow-x-hidden text-nowrap overflow-ellipsis",
-  class: "",
-});
 
 export const RowContext = createContext<{ rowIndex: number }>();
 
@@ -22,12 +16,13 @@ const BaseRow = (
   return (
     <div
       data-row
+      data-header-row
       data-row-index={props.index}
       classList={{
-        "*:bg-primary grid cursor-pointer grid-cols-subgrid text-sm select-none": true,
+        // "*:bg-primary grid cursor-pointer grid-cols-subgrid text-sm select-none": true,
+        "data-row": true,
         "odd:*:bg-alt": props.index >= 0,
       }}
-      style={{ "grid-column": "1 / -1" }}
       {...props}
     >
       {props.children}
@@ -43,11 +38,7 @@ export const HeaderRow = <T, K extends keyof T>(props: {
       <For each={props.columns}>
         {(column, i) => (
           <LiteralCell index={i()}>
-            <Title
-            // TODO use data attr
-            >
-              {column.header}
-            </Title>
+            <Title>{column.header}</Title>
           </LiteralCell>
         )}
       </For>
@@ -77,7 +68,12 @@ export const DataRow = <T, K extends keyof T>(props: {
       <RowContext.Provider value={{ rowIndex: props.index }}>
         <For each={props.columns}>
           {(column, j) => (
-            <DataCell index={j()} row={props.row} column={column} />
+            <DataCell
+              class="cell no-wrap"
+              index={j()}
+              row={props.row}
+              column={column}
+            />
           )}
         </For>
       </RowContext.Provider>

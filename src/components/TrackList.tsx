@@ -1,15 +1,11 @@
 import { createMemo, For, Match, Switch, type Accessor } from "solid-js";
 
 import { AlbumGroup } from "../components/AlbumGroup";
-import { propsOverride } from "../lib/components";
+import { NoWrap } from "../lib/components/title";
 import { type Track } from "../schemas/track";
 
 import { DataTable } from "./DataTable";
 import { type ColumnDefs } from "./DataTable/types";
-
-const NoWrap = propsOverride("div", {
-  class: "no-wrap",
-});
 
 const createTrackColumns = <Keys extends keyof Track>(
   tracks: Track[],
@@ -38,7 +34,7 @@ const createTrackColumns = <Keys extends keyof Track>(
         accessorKey: "track",
         header: "Track",
         size: "min-content",
-        cell: (props) => <NoWrap> {props.value} </NoWrap>,
+        cell: (props) => <NoWrap>{props.value}</NoWrap>,
       },
       title: {
         accessorKey: "title",
@@ -154,21 +150,19 @@ export const TrackList = (props: {
       <Match when={false}>{(_) => <AlbumGrid albumIds={albumIds()} />}</Match>
       <Match when={true}>
         {(_) => (
-          <div tabindex={2}>
-            <DataTable
-              groupBy="album_id"
-              GroupComponent={AlbumGroup}
-              groupColumnSize={albumArtColumnSize}
-              onRowDblClick={(row: Track) => {
-                console.log(
-                  `Double-clicked track: ${row.title} by ${row.artist}`,
-                );
-                props.onPlay(row);
-              }}
-              data={props.tracks}
-              columns={columns()}
-            />
-          </div>
+          <DataTable
+            groupBy="album_id"
+            GroupComponent={AlbumGroup}
+            groupColumnSize={albumArtColumnSize}
+            onRowDblClick={(row: Track) => {
+              console.log(
+                `Double-clicked track: ${row.title} by ${row.artist}`,
+              );
+              props.onPlay(row);
+            }}
+            data={props.tracks}
+            columns={columns()}
+          />
         )}
       </Match>
     </Switch>

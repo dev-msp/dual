@@ -1,0 +1,15 @@
+body {
+  background-color: var(--theme-bg);
+  color: var(--theme-fg);
+  font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+}
+
+// remove pico's max-width on text elements
+@media (width >= 480px) {
+  h1, p { max-width: none; }
+}

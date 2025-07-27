@@ -1,3 +1,4 @@
+import { isFunction } from "rxjs/internal/util/isFunction";
 import {
   mergeProps,
   type Component,
@@ -6,15 +7,16 @@ import {
 } from "solid-js";
 import { Dynamic } from "solid-js/web";
 
-export const propsOverride = <
-  C extends ValidComponent,
-  E extends ComponentProps<C> & { component?: never },
->(
-  comp: C,
-  propsOverride: E,
-): Component<E> => {
-  return (props: ComponentProps<C>) => {
-    const mergedProps = mergeProps(props, propsOverride);
-    return <Dynamic component={comp} {...mergedProps} />;
+export const propsOverride =
+  <C extends ValidComponent, E extends Partial<ComponentProps<C>>>(
+    comp: C,
+    propsOverride: E | ((props: ComponentProps<C>) => E),
+  ): Component<ComponentProps<C>> =>
+  (props: ComponentProps<C>) => {
+    const mergedProps = () =>
+      mergeProps(
+        props,
+        isFunction(propsOverride) ? propsOverride(props) : propsOverride,
+      );
+    return <Dynamic component={comp} {...mergedProps()} />;
   };
-};

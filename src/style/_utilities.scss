@@ -1,0 +1,19 @@
+// does one job: makes a child grid inherit columns from its parent
+@mixin subgrid-inherit-cols {
+  display: grid;
+  grid-column: var(--subgrid-col-start) / -1;
+  grid-template-columns: subgrid;
+}
+
+// text-wrapping utility
+.u-no-wrap {
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: preserve nowrap;
+}
+
+// scroll utility
+.u-scroll-y {
+  overflow-y: scroll;
+}

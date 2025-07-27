@@ -102,14 +102,9 @@ export const DataTable = <T extends Rec, K extends keyof T>(
           data-cosmetic
           style={{ "grid-column-start": "1", "grid-row-start": "1" }}
         />
-        <div
-          // TODO use data-grouped to decide grid column in css
-          // class="grid grid-cols-subgrid"
-          // style={{ "grid-column": props.groupBy ? "2 / -1" : "1 / -1" }}
-          class="row-subgrid"
-        >
-          <HeaderRow columns={orderedColumns()} />
-        </div>
+
+        <HeaderRow columns={orderedColumns()} />
+
         <div
           data-cosmetic
           class="row-divider"
