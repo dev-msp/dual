@@ -168,7 +168,6 @@ export const App = () => {
   return (
     <MetaProvider>
       <div class="app-container" >
-
         <Order
           onReset={() => setTrackList("order", initialOrder)}
           onClick={(ch) => {

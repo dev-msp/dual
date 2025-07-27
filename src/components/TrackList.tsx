@@ -8,8 +8,7 @@ import { DataTable } from "./DataTable";
 import { type ColumnDefs } from "./DataTable/types";
 
 const NoWrap = propsOverride("div", {
-  class:
-    "overflow-hidden py-[3px] px-2 text-left overflow-ellipsis whitespace-nowrap",
+  class: "no-wrap",
 });
 
 const createTrackColumns = <Keys extends keyof Track>(

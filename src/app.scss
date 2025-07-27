@@ -70,7 +70,7 @@
   --theme-darkest: var(--pico-color-azure-900);
   --theme-darker: var(--pico-color-azure-800);
 
-  --theme-bg: var(--theme-darker);
+  --theme-bg: var(--theme-darkest);
   --theme-fg: var(--pico-color-azure-200);
 }
 
@@ -195,4 +195,11 @@ main {
   .credits {
     width: 108%;
   }
+}
+
+.no-wrap {
+  overflow: ellipsis;
+  padding: 3px calc(var(--pico-spacing));
+  text-align: left;
+  white-space: preserve nowrap;
 }
