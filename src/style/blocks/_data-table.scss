@@ -1,7 +1,22 @@
+@mixin subgrid-inherit-cols {
+  display: grid;
+  grid-column: var(--subgrid-col-start) / -1;
+  grid-template-columns: subgrid;
+}
+
+.table-header,
+.data-row,
+[data-album-group],
+[data-album-group] .rows {
+  @include subgrid-inherit-cols;
+}
+
+
 .data-table {
   --subgrid-col-start: 1;
 
   display: grid;
+  column-gap: var(--space-1);
 
   @media screen and (width >= 1024px) {
     column-gap: var(--space-3);
@@ -9,8 +24,6 @@
 
   .table-header {
     --subgrid-col-start: 2;
-
-    @include subgrid-inherit-cols;
 
     position: sticky;
     z-index: 10;
@@ -25,10 +38,8 @@
   .data-row {
     --subgrid-col-start: 1;
 
-    @include subgrid-inherit-cols;
-
     column-gap: 1px;
-    font-size: 0.9rem;
+    font-size: 90%;
 
     .cell {
       padding: var(--space-1) var(--space-1);
@@ -44,12 +55,11 @@
     [data-when-grouped] { display: none; }
     .table-header { --subgrid-col-start: 1; }
   }
+
 }
 
 [data-album-group] {
   --spacing: var(--space-3);
-
-  @include subgrid-inherit-cols;
 
   margin-top: var(--spacing);
   column-gap: var(--spacing);
@@ -64,8 +74,6 @@
 
   .rows {
     --subgrid-col-start: 2;
-
-    @include subgrid-inherit-cols;
 
     height: min-content;
     background-color: var(--theme-fg);

@@ -6,5 +6,5 @@ export const Title = propsOverride("div", (props) => ({
 }));
 
 export const NoWrap = propsOverride("div", (props) => ({
-  class: `${props.class ?? ""} no-wrap`,
+  class: `${props.class ?? ""} u-no-wrap`,
 }));

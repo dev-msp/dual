@@ -1,0 +1,18 @@
+.order {
+  // basic layout is now handled by utilities on the element
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+
+  & [role="button"] {
+    padding: 0;
+    border: unset;
+    background-color: unset;
+  }
+
+  & .option {
+    padding: var(--space-1) var(--space-2);
+    border: 1px var(--theme-fg) solid;
+    border-radius: calc(var(--pico-border-radius) * 3);
+  }
+}

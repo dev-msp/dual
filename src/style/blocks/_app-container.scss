@@ -7,7 +7,7 @@
   margin: 0 auto;
   grid-auto-flow: column;
   grid-template-columns: 1fr;
-  grid-template-rows: min-content 75% 1fr;
+  grid-template-rows: min-content minmax(75%, 1fr) min-content;
 
   @media screen and (width <= 1024px) {
     width: 100%;

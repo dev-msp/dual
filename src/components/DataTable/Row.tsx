@@ -69,7 +69,7 @@ export const DataRow = <T, K extends keyof T>(props: {
         <For each={props.columns}>
           {(column, j) => (
             <DataCell
-              class="cell no-wrap"
+              class="cell u-no-wrap"
               index={j()}
               row={props.row}
               column={column}
