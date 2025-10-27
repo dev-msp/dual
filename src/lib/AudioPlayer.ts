@@ -3,7 +3,6 @@ type PlayerStateType = 'IDLE' | 'LOADING' | 'PLAYING' | 'PAUSED';
 interface PlayerState {
   type: PlayerStateType;
   trackId?: number;
-  trackSide?: 'A' | 'B';
 }
 
 export class AudioPlayer {
@@ -17,7 +16,6 @@ export class AudioPlayer {
 
   // Callbacks for reactive state updates
   private onPlayingChanged?: (isPlaying: boolean) => void;
-  private onTrackChanged?: (track: 'A' | 'B' | null) => void;
   private onEnded?: () => void;
 
   constructor() {
@@ -31,7 +29,7 @@ export class AudioPlayer {
    * Play a track. If already loading, this request is ignored.
    * If playing a different track, stops current playback and starts the new one.
    */
-  async play(trackId: number, trackSide: 'A' | 'B'): Promise<void> {
+  async play(trackId: number): Promise<void> {
     // Ignore if already loading this track
     if (
       this.state.type === 'LOADING' &&
@@ -49,11 +47,11 @@ export class AudioPlayer {
     }
 
     // Transition to LOADING state
-    this.transitionTo({ type: 'LOADING', trackId, trackSide });
+    this.transitionTo({ type: 'LOADING', trackId });
 
     try {
       const buffer = await this.fetchAndDecode(trackId);
-      this.playFromBuffer(buffer, trackId, trackSide);
+      this.playFromBuffer(buffer, trackId);
     } catch (err) {
       console.error('Error playing track:', err);
       this.transitionTo({ type: 'IDLE' });
@@ -71,11 +69,10 @@ export class AudioPlayer {
     this.pausedTime = this.audioContext.currentTime - this.startTime;
     this.stopSource();
 
-    const { trackId, trackSide } = this.state;
+    const { trackId } = this.state;
     this.transitionTo({
       type: 'PAUSED',
       trackId,
-      trackSide,
     });
   }
 
@@ -92,7 +89,7 @@ export class AudioPlayer {
       return;
     }
 
-    this.resumeFromPausedTime(buffer, this.state.trackId, this.state.trackSide!);
+    this.resumeFromPausedTime(buffer, this.state.trackId);
   }
 
   /**
@@ -124,24 +121,10 @@ export class AudioPlayer {
   }
 
   /**
-   * Get current track side (A, B, or null)
-   */
-  get currentTrack(): 'A' | 'B' | null {
-    return this.state.trackSide ?? null;
-  }
-
-  /**
    * Register callback for playback state changes
    */
   setOnPlayingChanged(callback: (isPlaying: boolean) => void): void {
     this.onPlayingChanged = callback;
-  }
-
-  /**
-   * Register callback for track changes
-   */
-  setOnTrackChanged(callback: (track: 'A' | 'B' | null) => void): void {
-    this.onTrackChanged = callback;
   }
 
   /**
@@ -174,13 +157,6 @@ export class AudioPlayer {
     if (wasPlaying !== isNowPlaying) {
       this.onPlayingChanged?.(isNowPlaying);
     }
-
-    // Notify of track changes
-    const oldTrack = oldState.trackSide ?? null;
-    const newTrack = newState.trackSide ?? null;
-    if (oldTrack !== newTrack) {
-      this.onTrackChanged?.(newTrack);
-    }
   }
 
   /**
@@ -188,6 +164,9 @@ export class AudioPlayer {
    */
   private stopSource(): void {
     if (this.currentSource) {
+      // Clear the onended handler to prevent stale events from firing
+      // after a new track has started playing
+      this.currentSource.onended = null;
       try {
         this.currentSource.stop();
         this.currentSource.disconnect();
@@ -233,7 +212,6 @@ export class AudioPlayer {
   private playFromBuffer(
     buffer: AudioBuffer,
     trackId: number,
-    trackSide: 'A' | 'B',
   ): void {
     this.stopSource();
 
@@ -254,7 +232,7 @@ export class AudioPlayer {
     this.pausedTime = 0;
     this.currentSource.start(0);
 
-    this.transitionTo({ type: 'PLAYING', trackId, trackSide });
+    this.transitionTo({ type: 'PLAYING', trackId });
   }
 
   /**
@@ -263,7 +241,6 @@ export class AudioPlayer {
   private resumeFromPausedTime(
     buffer: AudioBuffer,
     trackId: number,
-    trackSide: 'A' | 'B',
   ): void {
     this.stopSource();
 
@@ -281,6 +258,6 @@ export class AudioPlayer {
     this.startTime = this.audioContext.currentTime - this.pausedTime;
     this.currentSource.start(0, this.pausedTime);
 
-    this.transitionTo({ type: 'PLAYING', trackId, trackSide });
+    this.transitionTo({ type: 'PLAYING', trackId });
   }
 }

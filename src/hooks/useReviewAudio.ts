@@ -29,20 +29,26 @@ export function useReviewAudio(
 
   // Wire up player callbacks to SolidJS signals
   player.setOnPlayingChanged(setIsPlaying);
-  player.setOnTrackChanged(setCurrentTrack);
 
-  const playTrack = async (track: "A" | "B") => {
-    const targetTrack = track === "A" ? trackA() : trackB();
+  // This hook manages the A/B side tracking - the base player doesn't care
+  const playTrack = async (side: "A" | "B") => {
+    const targetTrack = side === "A" ? trackA() : trackB();
     if (!targetTrack) return;
 
+    // Update which side we're playing before starting playback
+    setCurrentTrack(side);
+
     // AudioPlayer prevents concurrent playback automatically
-    await player.play(targetTrack.id, track);
+    await player.play(targetTrack.id);
   };
 
   const pause = () => player.pause();
   const resume = () => player.resume();
   const toggle = () => player.toggle();
-  const stop = () => player.stop();
+  const stop = () => {
+    player.stop();
+    setCurrentTrack(null);
+  };
 
   // Auto-play effect when new pair loads
   createEffect(() => {

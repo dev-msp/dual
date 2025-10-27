@@ -1,8 +1,6 @@
 import "./app.scss";
 
 import { MetaProvider } from "@solidjs/meta";
-import { of } from "rxjs";
-import * as op from "rxjs/operators";
 import {
   createEffect,
   createMemo,
@@ -14,33 +12,10 @@ import { createStore } from "solid-js/store";
 import { z } from "zod/v4";
 
 import { TrackList } from "./components/TrackList";
-import { observable } from "./lib/reactive";
-import { elementStream } from "./lib/reactive/dom";
+import { AudioPlayer } from "./lib/AudioPlayer";
 import { nextDirection, Order } from "./Order";
 import { trackSchema, type Track } from "./schemas/track";
 
-const trackIdSchema = z.number().positive();
-type PlaybackEvent = z.infer<typeof playbackEventSchema>;
-const playbackEventSchema = z.discriminatedUnion("type", [
-  z.object({
-    type: "PLAY",
-    trackId: trackIdSchema,
-  }),
-  z.object({
-    type: "PLAY_PAUSE",
-  }),
-  z.object({
-    type: "CLEAR_QUEUE",
-  }),
-  z.object({
-    type: "ENQUEUE_NEXT",
-    trackIds: z.array(trackIdSchema),
-  }),
-  z.object({
-    type: "ENQUEUE_END",
-    trackIds: z.array(trackIdSchema),
-  }),
-]);
 
 type ListState = {
   tracks: { [trackId: number]: Track };
@@ -129,41 +104,21 @@ export const App = () => {
     );
   });
 
-  const audioEl = elementStream<HTMLAudioElement, HTMLAudioElement | null>(
-    (el) => of(el),
-    null,
-  );
-  const [currentTrack, setCurrentTrack] = createSignal<number | null>(null);
+  // Set up audio player for track playback
+  const player = new AudioPlayer();
+  const [isPlaying, setIsPlaying] = createSignal(false);
 
-  const sub = observable(currentTrack)
-    .pipe(
-      op.map((trackId) =>
-        trackId === null ? null : `/api/tracks/${trackId}/play`,
-      ),
-      op.withLatestFrom(audioEl.stream$),
-      op.switchMap(async ([src, el]) => {
-        if (!src) {
-          if (el?.src) {
-            el.pause();
-            el.src = "";
-          }
-          return Promise.resolve();
-        }
-        if (el?.src === src) {
-          return Promise.resolve();
-        }
-        if (el?.src) {
-          el.pause();
-        }
-        if (el) {
-          el.src = src;
-          return el.play();
-        }
-      }),
-    )
-    .subscribe({ error: (err) => console.error("Audio playback error:", err) });
+  // Wire up player callbacks to SolidJS signals
+  player.setOnPlayingChanged(setIsPlaying);
 
-  onCleanup(() => sub.unsubscribe());
+  // Handle track double-click from TrackList
+  const handlePlayTrack = async (track: Track) => {
+    await player.play(track.id);
+  };
+
+  onCleanup(() => {
+    player.destroy();
+  });
 
   return (
     <MetaProvider>
@@ -190,21 +145,8 @@ export const App = () => {
             "overflow-y": "scroll",
           }}
         >
-          <TrackList onPlay={(x) => setCurrentTrack(x.id)} tracks={tracks()} />
+          <TrackList onPlay={handlePlayTrack} tracks={tracks()} />
         </div>
-
-        {/* <Player */}
-        {/*   ref={audioEl.ref} */}
-        {/*   onPlayPause={() => { */}
-        {/*     if (audioEl()?.paused) { */}
-        {/*       audioEl() */}
-        {/*         ?.play() */}
-        {/*         .catch(() => console.error("Problem playing")); */}
-        {/*     } else { */}
-        {/*       audioEl()?.pause(); */}
-        {/*     } */}
-        {/*   }} */}
-        {/* /> */}
       </div>
     </MetaProvider>
   );
