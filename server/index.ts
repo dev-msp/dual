@@ -6,6 +6,8 @@ import { eq } from "drizzle-orm";
 import * as rx from "rxjs";
 
 import { listTracks, optsFromRequest, type UnprocessedTask } from "./api";
+import { submitComparison } from "./api/comparison";
+import { getPairs } from "./api/pairs";
 import { enqueueTask, taskEventsById, tasks$ } from "./api/task";
 import { TEMP_DIR } from "./api/worker";
 import { db, type Db } from "./db";
@@ -114,5 +116,7 @@ Bun.serve({
     "/api/tracks": (req) => listTracks(db, optsFromRequest(req)),
     "/api/tracks/:trackId/play": (req) => serveTrack(db, req),
     "/api/albums/:albumId/artwork": (req) => serveAlbumArt(db, req),
+    "/api/comparison": (req) => submitComparison(db, req),
+    "/api/pairs": (req) => getPairs(db, req),
   },
 });
