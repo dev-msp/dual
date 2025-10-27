@@ -53,7 +53,18 @@ const serveTrack = async (
       return new Response("Track file not found", { status: 404 });
     }
 
-    return new Response(file);
+    const size = file.size;
+    const headers = new Headers({
+      "Content-Type": "audio/mpeg",
+      "Content-Length": size.toString(),
+      "Accept-Ranges": "bytes",
+      "Cache-Control": "public, max-age=31536000",
+    });
+
+    return new Response(file, {
+      status: 200,
+      headers,
+    });
   } catch (error) {
     console.error("Error serving track:", error);
     return new Response("Internal Server Error", { status: 500 });

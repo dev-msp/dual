@@ -23,23 +23,47 @@ export function useReviewAudio(
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [audioElement] = createSignal(new Audio());
   const [lastPairId, setLastPairId] = createSignal<string | null>(null);
+  const [shouldPlayOnCanPlay, setShouldPlayOnCanPlay] = createSignal(false);
 
   const audio = audioElement();
+  audio.crossOrigin = "anonymous";
 
-  // Set up audio element event listeners
-  audio.addEventListener("play", () => setIsPlaying(true));
-  audio.addEventListener("pause", () => setIsPlaying(false));
-  audio.addEventListener("ended", () => {
-    setIsPlaying(false);
-    // If track A just ended and autoplay is on, play track B
-    if (currentTrack() === "A" && autoplay() && trackB()) {
-      playTrack("B");
-    }
-  });
+  // Set up audio element event listeners once with proper cleanup
+  createEffect(() => {
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      // If track A just ended and autoplay is on, play track B
+      if (currentTrack() === "A" && autoplay() && trackB()) {
+        playTrack("B");
+      }
+    };
+    const handleLoadedMetadata = () => {
+      if (shouldPlayOnCanPlay()) {
+        audio
+          .play()
+          .catch((err) => console.error("Error playing track:", err));
+      }
+    };
+    const handlePlaying = () => {
+      setShouldPlayOnCanPlay(false);
+    };
 
-  onCleanup(() => {
-    audio.pause();
-    audio.src = "";
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("playing", handlePlaying);
+
+    onCleanup(() => {
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("playing", handlePlaying);
+      audio.src = "";
+    });
   });
 
   const playTrack = (track: "A" | "B") => {
@@ -56,13 +80,12 @@ export function useReviewAudio(
       return;
     }
 
-    // Load and play new track
-    audio.pause();
+    // Load and play new track - avoid pause() to prevent pops
     audio.src = src;
+    audio.currentTime = 0;
+    audio.load();
     setCurrentTrack(track);
-    audio
-      .play()
-      .catch((err) => console.error("Error playing track:", err));
+    setShouldPlayOnCanPlay(true);
   };
 
   const pause = () => {
