@@ -1,8 +1,9 @@
+import { asc, desc } from "drizzle-orm";
 import { z } from "zod/v4";
-import { asc, desc, sql } from "drizzle-orm";
 
 import type { Db } from "../db";
 import { scoredItems, itemsWithScore } from "../db/query";
+
 import type { Ordering } from "./index";
 
 const pairSelectionSchema = z.object({
@@ -108,7 +109,13 @@ function getTrackPool(
  * Randomly select n pairs from the track pool
  */
 function selectRandomPairs(
-  tracks: Array<{ id: number; title: string | null; artist: string | null; album: string | null; score: number | null }>,
+  tracks: Array<{
+    id: number;
+    title: string | null;
+    artist: string | null;
+    album: string | null;
+    score: number | null;
+  }>,
   count: number,
 ): TrackPair[] {
   const pairs: TrackPair[] = [];
@@ -143,7 +150,13 @@ function selectRandomPairs(
  * Select pairs with similar scores (high uncertainty)
  */
 function selectUncertainPairs(
-  tracks: Array<{ id: number; title: string | null; artist: string | null; album: string | null; score: number | null }>,
+  tracks: Array<{
+    id: number;
+    title: string | null;
+    artist: string | null;
+    album: string | null;
+    score: number | null;
+  }>,
   count: number,
   uncertaintyWindow: number,
 ): TrackPair[] {
@@ -210,13 +223,14 @@ function selectUncertainPairs(
 /**
  * Handle pair selection request
  */
-export async function getPairs(db: Db, req: Request): Promise<Response> {
+export function getPairs(db: Db, req: Request): Promise<Response> {
   try {
     const url = new URL(req.url);
     const params = {
       strategy:
-        (url.searchParams.get("strategy") as PairSelectionRequest["strategy"]) ||
-        "random",
+        (url.searchParams.get(
+          "strategy",
+        ) as PairSelectionRequest["strategy"]) || "random",
       count: url.searchParams.get("count")
         ? parseInt(url.searchParams.get("count")!, 10)
         : 1,

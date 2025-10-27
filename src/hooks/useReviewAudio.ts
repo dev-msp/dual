@@ -22,6 +22,7 @@ export function useReviewAudio(
   const [currentTrack, setCurrentTrack] = createSignal<"A" | "B" | null>(null);
   const [isPlaying, setIsPlaying] = createSignal(false);
   const [audioElement] = createSignal(new Audio());
+  const [lastPairId, setLastPairId] = createSignal<string | null>(null);
 
   const audio = audioElement();
 
@@ -97,14 +98,22 @@ export function useReviewAudio(
     const b = trackB();
     const shouldAutoplay = autoplay();
 
-    if (a && b && shouldAutoplay) {
+    // Generate a unique ID for the current pair
+    const pairId = a && b ? `${a.id}-${b.id}` : null;
+    const prevPairId = lastPairId();
+
+    // Only autoplay if this is a NEW pair (pair ID changed)
+    if (pairId && pairId !== prevPairId && shouldAutoplay) {
+      setLastPairId(pairId);
       // Automatically play track A when a new pair loads
       playTrack("A");
-    } else {
+    } else if (!a || !b) {
       // Stop playback if tracks are cleared
-      if (!a || !b) {
-        stop();
-      }
+      setLastPairId(null);
+      stop();
+    } else if (pairId && pairId !== prevPairId) {
+      // Update pair ID even if autoplay is off
+      setLastPairId(pairId);
     }
   });
 
