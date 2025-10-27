@@ -21,82 +21,146 @@ export function useReviewAudio(
 ): [ReviewAudioState, ReviewAudioControls] {
   const [currentTrack, setCurrentTrack] = createSignal<"A" | "B" | null>(null);
   const [isPlaying, setIsPlaying] = createSignal(false);
-  const [audioElement] = createSignal(new Audio());
   const [lastPairId, setLastPairId] = createSignal<string | null>(null);
-  const [shouldPlayOnCanPlay, setShouldPlayOnCanPlay] = createSignal(false);
 
-  const audio = audioElement();
-  audio.crossOrigin = "anonymous";
+  // Web Audio API state
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const decodedBuffers = new Map<number, AudioBuffer>();
+  let currentSource: AudioBufferSourceNode | null = null;
+  let startTime = 0;
+  let pausedTime = 0;
 
-  // Set up audio element event listeners once with proper cleanup
-  createEffect(() => {
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
-    const handleEnded = () => {
+  const MAX_CACHED_BUFFERS = 10;
+
+  // Fetch and decode an MP3 track
+  const fetchAndDecode = async (trackId: number): Promise<AudioBuffer> => {
+    // Check cache first
+    if (decodedBuffers.has(trackId)) {
+      return decodedBuffers.get(trackId)!;
+    }
+
+    try {
+      const response = await fetch(`/api/tracks/${trackId}/play`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch track: ${response.status}`);
+      }
+
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+      // Cache the decoded buffer
+      decodedBuffers.set(trackId, audioBuffer);
+
+      // Limit cache size
+      if (decodedBuffers.size > MAX_CACHED_BUFFERS) {
+        const firstKey = decodedBuffers.keys().next().value;
+        decodedBuffers.delete(firstKey);
+      }
+
+      return audioBuffer;
+    } catch (err) {
+      console.error("Error decoding audio:", err);
+      throw err;
+    }
+  };
+
+  // Stop current playback
+  const stopCurrentSource = () => {
+    if (currentSource) {
+      currentSource.stop();
+      currentSource.disconnect();
+      currentSource = null;
+    }
+  };
+
+  // Create and play a source from buffer
+  const playFromBuffer = (buffer: AudioBuffer) => {
+    stopCurrentSource();
+
+    currentSource = audioContext.createBufferSource();
+    currentSource.buffer = buffer;
+    currentSource.connect(audioContext.destination);
+
+    // Handle track end
+    currentSource.onended = () => {
       setIsPlaying(false);
-      // If track A just ended and autoplay is on, play track B
+      currentSource = null;
+
+      // Autoplay next track if applicable
       if (currentTrack() === "A" && autoplay() && trackB()) {
         playTrack("B");
       }
     };
-    const handleLoadedMetadata = () => {
-      if (shouldPlayOnCanPlay()) {
-        audio
-          .play()
-          .catch((err) => console.error("Error playing track:", err));
+
+    startTime = audioContext.currentTime;
+    pausedTime = 0;
+    currentSource.start(0);
+    setIsPlaying(true);
+  };
+
+  // Resume from paused position
+  const resumeFromPausedTime = (buffer: AudioBuffer) => {
+    stopCurrentSource();
+
+    currentSource = audioContext.createBufferSource();
+    currentSource.buffer = buffer;
+    currentSource.connect(audioContext.destination);
+
+    currentSource.onended = () => {
+      setIsPlaying(false);
+      currentSource = null;
+
+      if (currentTrack() === "A" && autoplay() && trackB()) {
+        playTrack("B");
       }
     };
-    const handlePlaying = () => {
-      setShouldPlayOnCanPlay(false);
-    };
 
-    audio.addEventListener("play", handlePlay);
-    audio.addEventListener("pause", handlePause);
-    audio.addEventListener("ended", handleEnded);
-    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
-    audio.addEventListener("playing", handlePlaying);
+    startTime = audioContext.currentTime - pausedTime;
+    currentSource.start(0, pausedTime);
+    setIsPlaying(true);
+  };
 
-    onCleanup(() => {
-      audio.removeEventListener("play", handlePlay);
-      audio.removeEventListener("pause", handlePause);
-      audio.removeEventListener("ended", handleEnded);
-      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      audio.removeEventListener("playing", handlePlaying);
-      audio.src = "";
-    });
-  });
-
-  const playTrack = (track: "A" | "B") => {
+  const playTrack = async (track: "A" | "B") => {
     const targetTrack = track === "A" ? trackA() : trackB();
     if (!targetTrack) return;
 
-    const src = `/api/tracks/${targetTrack.id}/play`;
-
-    // If same track and same source, just resume
-    if (currentTrack() === track && audio.src.endsWith(src)) {
-      audio
-        .play()
-        .catch((err) => console.error("Error resuming playback:", err));
+    // If same track and already loaded, just resume if paused
+    if (currentTrack() === track && !isPlaying()) {
+      if (decodedBuffers.has(targetTrack.id)) {
+        resumeFromPausedTime(decodedBuffers.get(targetTrack.id)!);
+      }
       return;
     }
 
-    // Load and play new track - avoid pause() to prevent pops
-    audio.src = src;
-    audio.currentTime = 0;
-    audio.load();
+    // If already playing this track, don't restart it
+    if (currentTrack() === track && isPlaying()) {
+      return;
+    }
+
     setCurrentTrack(track);
-    setShouldPlayOnCanPlay(true);
+
+    try {
+      const buffer = await fetchAndDecode(targetTrack.id);
+      playFromBuffer(buffer);
+    } catch (err) {
+      console.error("Error playing track:", err);
+    }
   };
 
   const pause = () => {
-    audio.pause();
+    if (currentSource && isPlaying()) {
+      pausedTime = audioContext.currentTime - startTime;
+      stopCurrentSource();
+      setIsPlaying(false);
+    }
   };
 
   const resume = () => {
-    if (currentTrack()) {
-      audio
-        .play()
-        .catch((err) => console.error("Error resuming playback:", err));
+    if (currentTrack() && !isPlaying()) {
+      const targetTrack = currentTrack() === "A" ? trackA() : trackB();
+      if (targetTrack && decodedBuffers.has(targetTrack.id)) {
+        resumeFromPausedTime(decodedBuffers.get(targetTrack.id)!);
+      }
     }
   };
 
@@ -109,10 +173,11 @@ export function useReviewAudio(
   };
 
   const stop = () => {
-    audio.pause();
-    audio.src = "";
+    stopCurrentSource();
     setCurrentTrack(null);
     setIsPlaying(false);
+    pausedTime = 0;
+    startTime = 0;
   };
 
   // Auto-play effect when new pair loads
@@ -138,6 +203,11 @@ export function useReviewAudio(
       // Update pair ID even if autoplay is off
       setLastPairId(pairId);
     }
+  });
+
+  onCleanup(() => {
+    stopCurrentSource();
+    decodedBuffers.clear();
   });
 
   return [
