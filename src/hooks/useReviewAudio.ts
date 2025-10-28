@@ -70,15 +70,19 @@ export function useReviewAudio(
       setLastPairId(null);
       stop();
     } else if (pairId && pairId !== prevPairId) {
-      // Update pair ID even if autoplay is off
+      // New pair loaded - stop current playback and update pair ID
       setLastPairId(pairId);
+      stop();
     }
   });
 
-  // Set up autoplay continuation (A -> B)
+  // Set up autoplay continuation (A -> B) or reset state when autoplay is off
   player.setOnEnded(() => {
     if (currentTrack() === "A" && autoplay() && trackB()) {
       void playTrack("B");
+    } else {
+      // Reset current track when playback ends without autoplay
+      setCurrentTrack(null);
     }
   });
 

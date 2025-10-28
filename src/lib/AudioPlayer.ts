@@ -1,4 +1,4 @@
-type PlayerStateType = 'IDLE' | 'LOADING' | 'PLAYING' | 'PAUSED';
+type PlayerStateType = "IDLE" | "LOADING" | "PLAYING" | "PAUSED";
 
 interface PlayerState {
   type: PlayerStateType;
@@ -6,7 +6,7 @@ interface PlayerState {
 }
 
 export class AudioPlayer {
-  private state: PlayerState = { type: 'IDLE' };
+  private state: PlayerState = { type: "IDLE" };
   private audioContext: AudioContext;
   private currentSource: AudioBufferSourceNode | null = null;
   private bufferCache: Map<number, AudioBuffer> = new Map();
@@ -19,8 +19,8 @@ export class AudioPlayer {
   private onEnded?: () => void;
 
   constructor() {
-    this.audioContext =
-      new (window.AudioContext || (window as any).webkitAudioContext)();
+    this.audioContext = new (window.AudioContext ||
+      (window as any).webkitAudioContext)();
   }
 
   // ============ Public API ============
@@ -31,30 +31,27 @@ export class AudioPlayer {
    */
   async play(trackId: number): Promise<void> {
     // Ignore if already loading this track
-    if (
-      this.state.type === 'LOADING' &&
-      this.state.trackId === trackId
-    ) {
+    if (this.state.type === "LOADING" && this.state.trackId === trackId) {
       return;
     }
 
     // If already playing this track, ignore
     if (
-      (this.state.type === 'PLAYING' || this.state.type === 'PAUSED') &&
+      (this.state.type === "PLAYING" || this.state.type === "PAUSED") &&
       this.state.trackId === trackId
     ) {
       return;
     }
 
     // Transition to LOADING state
-    this.transitionTo({ type: 'LOADING', trackId });
+    this.transitionTo({ type: "LOADING", trackId });
 
     try {
       const buffer = await this.fetchAndDecode(trackId);
       this.playFromBuffer(buffer, trackId);
     } catch (err) {
-      console.error('Error playing track:', err);
-      this.transitionTo({ type: 'IDLE' });
+      console.error("Error playing track:", err);
+      this.transitionTo({ type: "IDLE" });
     }
   }
 
@@ -62,7 +59,7 @@ export class AudioPlayer {
    * Pause playback (only valid in PLAYING state)
    */
   pause(): void {
-    if (this.state.type !== 'PLAYING') {
+    if (this.state.type !== "PLAYING") {
       return;
     }
 
@@ -71,7 +68,7 @@ export class AudioPlayer {
 
     const { trackId } = this.state;
     this.transitionTo({
-      type: 'PAUSED',
+      type: "PAUSED",
       trackId,
     });
   }
@@ -80,7 +77,7 @@ export class AudioPlayer {
    * Resume playback (only valid in PAUSED state)
    */
   resume(): void {
-    if (this.state.type !== 'PAUSED' || !this.state.trackId) {
+    if (this.state.type !== "PAUSED" || !this.state.trackId) {
       return;
     }
 
@@ -99,16 +96,16 @@ export class AudioPlayer {
     this.stopSource();
     this.pausedTime = 0;
     this.startTime = 0;
-    this.transitionTo({ type: 'IDLE' });
+    this.transitionTo({ type: "IDLE" });
   }
 
   /**
    * Toggle between playing and paused
    */
   toggle(): void {
-    if (this.state.type === 'PLAYING') {
+    if (this.state.type === "PLAYING") {
       this.pause();
-    } else if (this.state.type === 'PAUSED') {
+    } else if (this.state.type === "PAUSED") {
       this.resume();
     }
   }
@@ -117,7 +114,7 @@ export class AudioPlayer {
    * Check if audio is currently playing
    */
   get isPlaying(): boolean {
-    return this.state.type === 'PLAYING';
+    return this.state.type === "PLAYING";
   }
 
   /**
@@ -152,8 +149,8 @@ export class AudioPlayer {
     this.state = newState;
 
     // Notify of playing state changes
-    const wasPlaying = oldState.type === 'PLAYING';
-    const isNowPlaying = newState.type === 'PLAYING';
+    const wasPlaying = oldState.type === "PLAYING";
+    const isNowPlaying = newState.type === "PLAYING";
     if (wasPlaying !== isNowPlaying) {
       this.onPlayingChanged?.(isNowPlaying);
     }
@@ -200,6 +197,10 @@ export class AudioPlayer {
     // Limit cache size to prevent memory bloat
     if (this.bufferCache.size > this.MAX_CACHED_BUFFERS) {
       const firstKey = this.bufferCache.keys().next().value;
+      if (firstKey === undefined) {
+        throw new Error("Unexpected undefined key in buffer cache");
+      }
+      // eslint-disable-next-line drizzle/enforce-delete-with-where
       this.bufferCache.delete(firstKey);
     }
 
@@ -209,10 +210,7 @@ export class AudioPlayer {
   /**
    * Create a new source and play it from the beginning
    */
-  private playFromBuffer(
-    buffer: AudioBuffer,
-    trackId: number,
-  ): void {
+  private playFromBuffer(buffer: AudioBuffer, trackId: number): void {
     this.stopSource();
 
     this.currentSource = this.audioContext.createBufferSource();
@@ -222,8 +220,8 @@ export class AudioPlayer {
     // Set up end-of-track handler
     this.currentSource.onended = () => {
       // Only transition if we're still in PLAYING state (might have been stopped)
-      if (this.state.type === 'PLAYING') {
-        this.transitionTo({ type: 'IDLE' });
+      if (this.state.type === "PLAYING") {
+        this.transitionTo({ type: "IDLE" });
         this.onEnded?.();
       }
     };
@@ -232,16 +230,13 @@ export class AudioPlayer {
     this.pausedTime = 0;
     this.currentSource.start(0);
 
-    this.transitionTo({ type: 'PLAYING', trackId });
+    this.transitionTo({ type: "PLAYING", trackId });
   }
 
   /**
    * Create a new source and resume from a paused position
    */
-  private resumeFromPausedTime(
-    buffer: AudioBuffer,
-    trackId: number,
-  ): void {
+  private resumeFromPausedTime(buffer: AudioBuffer, trackId: number): void {
     this.stopSource();
 
     this.currentSource = this.audioContext.createBufferSource();
@@ -249,8 +244,8 @@ export class AudioPlayer {
     this.currentSource.connect(this.audioContext.destination);
 
     this.currentSource.onended = () => {
-      if (this.state.type === 'PLAYING') {
-        this.transitionTo({ type: 'IDLE' });
+      if (this.state.type === "PLAYING") {
+        this.transitionTo({ type: "IDLE" });
         this.onEnded?.();
       }
     };
@@ -258,6 +253,6 @@ export class AudioPlayer {
     this.startTime = this.audioContext.currentTime - this.pausedTime;
     this.currentSource.start(0, this.pausedTime);
 
-    this.transitionTo({ type: 'PLAYING', trackId });
+    this.transitionTo({ type: "PLAYING", trackId });
   }
 }
