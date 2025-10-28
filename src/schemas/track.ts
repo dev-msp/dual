@@ -18,6 +18,7 @@ export const trackSchema = z.object({
   albumartist: z.string().nullable(),
   albumartist_sort: z.string().nullable(),
   score: z.number().nullable(),
+  last_rated_at: z.number().nullable(),
 });
 
 export type Track = z.infer<typeof trackSchema>;

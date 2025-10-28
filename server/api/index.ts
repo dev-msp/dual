@@ -27,7 +27,7 @@ type DbTable =
 
 type Columns<T extends DbTable> = Extract<
   keyof T,
-  "score" | keyof (typeof items)["_"]["columns"]
+  "score" | "last_rated_at" | keyof (typeof items)["_"]["columns"]
 >;
 
 export type Ordering = {
@@ -106,6 +106,8 @@ export const listTracks = (db: Db, opts?: Options) => {
       ...item,
       path: item.path ? decoder.decode(item.path) : item.path,
       artPath: item.album_id ? (mapping[item.album_id] ?? null) : null,
+      score: item.score ?? null,
+      last_rated_at: item.last_rated_at ?? null,
     }));
   return serveJson(data);
 };

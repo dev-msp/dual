@@ -52,6 +52,7 @@ const ORDER_OPTIONS: (keyof Track)[] = [
   "title",
   "length",
   "score",
+  "last_rated_at",
   "added",
 ];
 

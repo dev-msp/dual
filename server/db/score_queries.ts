@@ -30,6 +30,7 @@ export function getTrackScore(db: Db, trackId: number): number {
 
 /**
  * Update or insert a track's score
+ * Also updates the last_rated_at timestamp
  */
 export function setTrackScore(db: Db, trackId: number, score: number): void {
   const existing = db
@@ -61,6 +62,10 @@ export function setTrackScore(db: Db, trackId: number, score: number): void {
       })
       .run();
   }
+
+  // Update the last rated timestamp
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  setTrackLastRatedAt(db, trackId, currentTimestamp);
 }
 
 /**
@@ -101,4 +106,63 @@ export function getTrackScores(
   }
 
   return scores;
+}
+
+/**
+ * Get the last rated timestamp for a track
+ * Returns null if no timestamp exists
+ */
+export function getTrackLastRatedAt(db: Db, trackId: number): number | null {
+  const result = db
+    .select({ value: itemAttributes.value })
+    .from(itemAttributes)
+    .where(
+      and(
+        eq(itemAttributes.entity_id, trackId),
+        eq(itemAttributes.key, "last_rated_at"),
+      ),
+    )
+    .get();
+
+  if (!result?.value) {
+    return null;
+  }
+
+  const timestamp = parseInt(result.value, 10);
+  return isNaN(timestamp) ? null : timestamp;
+}
+
+/**
+ * Update or insert a track's last rated timestamp
+ */
+export function setTrackLastRatedAt(db: Db, trackId: number, timestamp: number): void {
+  const existing = db
+    .select({ id: itemAttributes.id })
+    .from(itemAttributes)
+    .where(
+      and(
+        eq(itemAttributes.entity_id, trackId),
+        eq(itemAttributes.key, "last_rated_at"),
+      ),
+    )
+    .get();
+
+  const timestampStr = timestamp.toString();
+
+  if (existing) {
+    // Update existing timestamp
+    db.update(itemAttributes)
+      .set({ value: timestampStr })
+      .where(eq(itemAttributes.id, existing.id))
+      .run();
+  } else {
+    // Insert new timestamp
+    db.insert(itemAttributes)
+      .values({
+        entity_id: trackId,
+        key: "last_rated_at",
+        value: timestampStr,
+      })
+      .run();
+  }
 }

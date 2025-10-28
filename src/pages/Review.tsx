@@ -1,10 +1,12 @@
-import { createEffect, createSignal, Show } from "solid-js";
 import { useNavigate } from "@solidjs/router";
+import { createEffect, Show } from "solid-js";
+import z from "zod";
 
 import { ComparisonCard } from "../components/ComparisonCard";
 import { ControlBand } from "../components/ControlBand";
-import { useReviewAudio } from "../hooks/useReviewAudio";
 import { useKeyboard } from "../hooks/useKeyboard";
+import { useReviewAudio } from "../hooks/useReviewAudio";
+import { trackSchema, type Track } from "../schemas/track";
 import {
   reviewStore,
   setCurrentPair,
@@ -13,10 +15,8 @@ import {
   recordComparison,
   updateSettings,
   toggleAutoplay,
-  type ComparisonResult,
   type TrackPair,
 } from "../stores/reviewStore";
-import type { Track } from "../schemas/track";
 
 interface PairResponse {
   success: boolean;
@@ -26,6 +26,19 @@ interface PairResponse {
   }>;
   error?: string;
 }
+
+const pairsResponseSchema = z.object({
+  success: z.boolean(),
+  pairs: z
+    .array(
+      z.object({
+        trackA: trackSchema,
+        trackB: trackSchema,
+      }),
+    )
+    .optional(),
+  error: z.string().optional(),
+});
 
 interface ComparisonResponse {
   success: boolean;
@@ -59,7 +72,9 @@ export const Review = () => {
       });
 
       const response = await fetch(`/api/pairs?${params}`);
-      const data: PairResponse = await response.json();
+      const data: PairResponse = pairsResponseSchema.parse(
+        await response.json(),
+      );
 
       if (data.success && data.pairs && data.pairs.length > 0) {
         const pair: TrackPair = {
@@ -181,9 +196,7 @@ export const Review = () => {
             track={trackA()!}
             side="A"
             keyHint="A"
-            isPlaying={
-              audioState.currentTrack === "A" && audioState.isPlaying
-            }
+            isPlaying={audioState.currentTrack === "A" && audioState.isPlaying}
             onPlay={() => audioControls.playTrack("A")}
             onSelect={handleSelectA}
           />
@@ -204,9 +217,7 @@ export const Review = () => {
             track={trackB()!}
             side="B"
             keyHint="B"
-            isPlaying={
-              audioState.currentTrack === "B" && audioState.isPlaying
-            }
+            isPlaying={audioState.currentTrack === "B" && audioState.isPlaying}
             onPlay={() => audioControls.playTrack("B")}
             onSelect={handleSelectB}
           />

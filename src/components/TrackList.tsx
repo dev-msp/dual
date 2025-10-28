@@ -84,6 +84,37 @@ const createTrackColumns = <Keys extends keyof Track>(
           </NoWrap>
         ),
       },
+      last_rated_at: {
+        accessorKey: "last_rated_at",
+        hide: true,
+        header: "Last Scored",
+        size: "1fr",
+        cell: (props) => {
+          if (props.value === null) return <NoWrap>-</NoWrap>;
+
+          const now = Math.floor(Date.now() / 1000);
+          const diff = now - props.value;
+
+          let timeStr: string;
+          if (diff < 60) {
+            timeStr = "just now";
+          } else if (diff < 3600) {
+            const mins = Math.floor(diff / 60);
+            timeStr = `${mins} min${mins > 1 ? "s" : ""} ago`;
+          } else if (diff < 86400) {
+            const hours = Math.floor(diff / 3600);
+            timeStr = `${hours} hr${hours > 1 ? "s" : ""} ago`;
+          } else if (diff < 2592000) {
+            const days = Math.floor(diff / 86400);
+            timeStr = `${days} day${days > 1 ? "s" : ""} ago`;
+          } else {
+            const date = new Date(props.value * 1000);
+            timeStr = date.toLocaleDateString();
+          }
+
+          return <NoWrap>{timeStr}</NoWrap>;
+        },
+      },
     },
   };
 };
@@ -131,6 +162,7 @@ export const TrackList = (props: {
       "albumartist",
       "original_year",
       "score",
+      "last_rated_at",
     ]),
   );
 
