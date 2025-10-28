@@ -67,7 +67,7 @@ const initialStats: SessionStats = {
 };
 
 const defaultSettings: ReviewSettings = {
-  autoplay: true,
+  autoplay: false,
   kFactor: 32,
   selectionStrategy: "random",
   uncertaintyWindow: 200,
