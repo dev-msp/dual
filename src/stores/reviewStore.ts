@@ -1,13 +1,25 @@
 import { createStore } from "solid-js/store";
-import type { Track } from "../schemas/track";
+import { z } from "zod";
+
+import type { Json } from "../../server/api/task";
 
 export type ComparisonResult = "win" | "loss" | "draw" | "skip";
 
 export type SelectionStrategy = "random" | "uncertain" | "similar_scores";
 
+export const trackSubset = z.object({
+  id: z.number(),
+  title: z.string().nullable(),
+  artist: z.string().nullable(),
+  album: z.string().nullable(),
+  score: z.number().nullable(),
+});
+
+export type TrackSubset = z.infer<typeof trackSubset>;
+
 export interface TrackPair {
-  trackA: Track;
-  trackB: Track;
+  trackA: TrackSubset;
+  trackB: TrackSubset;
 }
 
 export interface SessionStats {
@@ -31,7 +43,7 @@ export interface ReviewState {
   // Current comparison
   currentPair: TrackPair | null;
   loading: boolean;
-  error: string | null;
+  error: Json | null;
 
   // Session tracking
   stats: SessionStats;
@@ -73,7 +85,8 @@ const initialState: ReviewState = {
   },
 };
 
-export const [reviewStore, setReviewStore] = createStore<ReviewState>(initialState);
+export const [reviewStore, setReviewStore] =
+  createStore<ReviewState>(initialState);
 
 // Helper functions to update the store
 
@@ -85,7 +98,7 @@ export const setLoading = (loading: boolean) => {
   setReviewStore("loading", loading);
 };
 
-export const setError = (error: string | null) => {
+export const setError = (error: Json) => {
   setReviewStore("error", error);
 };
 

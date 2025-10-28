@@ -64,7 +64,7 @@ function parseOrder(orderStr: string): Ordering[] {
  */
 function getTrackPool(
   db: Db,
-  orderString?: string,
+  orderArray?: string[],
   limitCount?: number,
 ): Array<{
   id: number;
@@ -86,8 +86,8 @@ function getTrackPool(
     .from(scoredItems);
 
   // Apply ordering
-  if (orderString) {
-    const orderings = parseOrder(orderString);
+  if (orderArray && orderArray.length > 0) {
+    const orderings = orderArray.flatMap((orderStr) => parseOrder(orderStr));
     query = query.orderBy(
       ...orderings.map(({ field, direction }) =>
         direction === "desc"
@@ -223,7 +223,7 @@ function selectUncertainPairs(
 /**
  * Handle pair selection request
  */
-export function getPairs(db: Db, req: Request): Promise<Response> {
+export function getPairs(db: Db, req: Request): Response {
   try {
     const url = new URL(req.url);
     const params = {

@@ -1,6 +1,7 @@
 import { createSignal, createEffect, onCleanup } from "solid-js";
-import type { Track } from "../schemas/track";
+
 import { AudioPlayer } from "../lib/AudioPlayer";
+import type { TrackSubset } from "../stores/reviewStore";
 
 export interface ReviewAudioState {
   currentTrack: "A" | "B" | null;
@@ -8,7 +9,7 @@ export interface ReviewAudioState {
 }
 
 export interface ReviewAudioControls {
-  playTrack: (track: "A" | "B") => void;
+  playTrack: (track: "A" | "B") => Promise<void>;
   pause: () => void;
   resume: () => void;
   toggle: () => void;
@@ -16,8 +17,8 @@ export interface ReviewAudioControls {
 }
 
 export function useReviewAudio(
-  trackA: () => Track | null,
-  trackB: () => Track | null,
+  trackA: () => TrackSubset | null,
+  trackB: () => TrackSubset | null,
   autoplay: () => boolean,
 ): [ReviewAudioState, ReviewAudioControls] {
   const [isPlaying, setIsPlaying] = createSignal(false);
@@ -63,7 +64,7 @@ export function useReviewAudio(
     // Only autoplay if this is a NEW pair (pair ID changed)
     if (pairId && pairId !== prevPairId && shouldAutoplay) {
       setLastPairId(pairId);
-      playTrack("A");
+      void playTrack("A");
     } else if (!a || !b) {
       // Stop playback if tracks are cleared
       setLastPairId(null);
@@ -77,7 +78,7 @@ export function useReviewAudio(
   // Set up autoplay continuation (A -> B)
   player.setOnEnded(() => {
     if (currentTrack() === "A" && autoplay() && trackB()) {
-      playTrack("B");
+      void playTrack("B");
     }
   });
 

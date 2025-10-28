@@ -1,12 +1,14 @@
 import { useNavigate } from "@solidjs/router";
-import { createEffect, Show } from "solid-js";
+import * as rx from "rxjs";
+import * as op from "rxjs/operators";
+import { createEffect, Show, onCleanup } from "solid-js";
 import z from "zod";
 
 import { ComparisonCard } from "../components/ComparisonCard";
 import { ControlBand } from "../components/ControlBand";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { useReviewAudio } from "../hooks/useReviewAudio";
-import { trackSchema, type Track } from "../schemas/track";
+import { filterMap } from "../lib/reactive";
 import {
   reviewStore,
   setCurrentPair,
@@ -16,24 +18,26 @@ import {
   updateSettings,
   toggleAutoplay,
   type TrackPair,
+  type ReviewSettings,
+  type TrackSubset,
+  trackSubset,
 } from "../stores/reviewStore";
 
 interface PairResponse {
   success: boolean;
   pairs?: Array<{
-    trackA: Track;
-    trackB: Track;
+    trackA: TrackSubset;
+    trackB: TrackSubset;
   }>;
   error?: string;
 }
-
 const pairsResponseSchema = z.object({
   success: z.boolean(),
   pairs: z
     .array(
       z.object({
-        trackA: trackSchema,
-        trackB: trackSchema,
+        trackA: trackSubset,
+        trackB: trackSubset,
       }),
     )
     .optional(),
@@ -45,6 +49,103 @@ interface ComparisonResponse {
   error?: string;
 }
 
+const comparisonResponseSchema = z.object({
+  success: z.boolean(),
+  error: z.string().optional(),
+});
+
+// RxJs Primitives for pair fetching
+
+/** Extract request params from current settings */
+const buildPairRequestParams = (settings: ReviewSettings): URLSearchParams => {
+  return new URLSearchParams({
+    strategy: settings.selectionStrategy,
+    count: "1",
+    ...(settings.filterOrder && { order: settings.filterOrder }),
+    ...(settings.filterLimit && {
+      limit: settings.filterLimit.toString(),
+    }),
+    uncertaintyWindow: settings.uncertaintyWindow.toString(),
+  });
+};
+
+/** Perform fetch operation and return promise */
+const fetchPairResponse = (params: URLSearchParams): Promise<PairResponse> =>
+  fetch(`/api/pairs?${params}`)
+    .then((response) => response.json())
+    .then((json) => pairsResponseSchema.parse(json));
+
+/** Validate and extract pair from response */
+const validateAndExtractPair = (response: PairResponse): TrackPair | null => {
+  if (response.success && response.pairs && response.pairs.length > 0) {
+    return {
+      trackA: response.pairs[0].trackA,
+      trackB: response.pairs[0].trackB,
+    };
+  }
+  return null;
+};
+
+/** Apply loading state change */
+const applyLoadingState = (loading: boolean): void => {
+  setLoading(loading);
+};
+
+/** Apply pair to store */
+const applyPairToStore = (pair: TrackPair): void => {
+  setCurrentPair(pair);
+};
+
+/** Apply error to store */
+const applyErrorToStore = (error: string): void => {
+  setError(error);
+};
+
+/** Create the complete pair fetching pipeline */
+const createPairFetchPipeline = () => {
+  // Trigger subject for requesting new pairs
+  const requestNewPair$ = new rx.Subject<void>();
+
+  // Main pipeline: convert void trigger to pair fetch
+  const pairFetch$ = requestNewPair$.pipe(
+    // Set loading state on request start
+    op.tap(() => applyLoadingState(true)),
+    // Clear previous errors
+    op.tap(() => applyErrorToStore("")),
+    // Get current settings and build params
+    op.map(() => buildPairRequestParams(reviewStore.settings)),
+    // Fetch from API
+    op.switchMap((params) => rx.from(fetchPairResponse(params))),
+    // Validate response and extract pair
+    op.map(validateAndExtractPair),
+    // Apply pair to store if valid, handle errors
+    op.tap((pair) => {
+      if (pair) {
+        applyPairToStore(pair);
+      }
+    }),
+    // Filter out null pairs
+    filterMap((pair) => pair),
+    // Handle success: clear loading
+    op.tap(() => applyLoadingState(false)),
+    // Catch errors and convert to error message
+    op.catchError((error: unknown) => {
+      console.error("Error fetching pair:", error);
+      const errorMsg =
+        error instanceof Error
+          ? error.message
+          : "Failed to fetch comparison pair";
+      applyErrorToStore(errorMsg);
+      applyLoadingState(false);
+      return rx.EMPTY;
+    }),
+    // Share to prevent duplicate requests
+    op.share(),
+  );
+
+  return { requestNewPair$, pairFetch$ };
+};
+
 export const Review = () => {
   const navigate = useNavigate();
 
@@ -54,43 +155,20 @@ export const Review = () => {
 
   const [audioState, audioControls] = useReviewAudio(trackA, trackB, autoplay);
 
-  // Fetch a new pair from the API
-  const fetchNewPair = async () => {
-    setLoading(true);
-    setError(null);
+  // Create the RxJs pair fetching pipeline
+  const { requestNewPair$, pairFetch$ } = createPairFetchPipeline();
 
-    try {
-      const { settings } = reviewStore;
-      const params = new URLSearchParams({
-        strategy: settings.selectionStrategy,
-        count: "1",
-        ...(settings.filterOrder && { order: settings.filterOrder }),
-        ...(settings.filterLimit && {
-          limit: settings.filterLimit.toString(),
-        }),
-        uncertaintyWindow: settings.uncertaintyWindow.toString(),
-      });
+  // Set up subscription to pair fetch pipeline
+  createEffect(() => {
+    const subscription = pairFetch$.subscribe({
+      // Pipeline handles store updates via tap operators
+    });
+    onCleanup(() => subscription.unsubscribe());
+  });
 
-      const response = await fetch(`/api/pairs?${params}`);
-      const data: PairResponse = pairsResponseSchema.parse(
-        await response.json(),
-      );
-
-      if (data.success && data.pairs && data.pairs.length > 0) {
-        const pair: TrackPair = {
-          trackA: data.pairs[0].trackA,
-          trackB: data.pairs[0].trackB,
-        };
-        setCurrentPair(pair);
-      } else {
-        setError(data.error || "No pairs available");
-      }
-    } catch (err) {
-      console.error("Error fetching pair:", err);
-      setError("Failed to fetch comparison pair");
-    } finally {
-      setLoading(false);
-    }
+  // Trigger a new pair fetch by emitting on the subject
+  const fetchNewPair = () => {
+    requestNewPair$.next();
   };
 
   // Submit comparison result to the API
@@ -110,7 +188,9 @@ export const Review = () => {
         }),
       });
 
-      const data: ComparisonResponse = await response.json();
+      const data: ComparisonResponse = comparisonResponseSchema.parse(
+        await response.json(),
+      );
 
       if (!data.success) {
         console.error("Comparison submission failed:", data.error);
@@ -121,36 +201,36 @@ export const Review = () => {
   };
 
   // Handle selection of track A
-  const handleSelectA = async () => {
+  const handleSelectA = () => {
     if (!reviewStore.currentPair) return;
 
-    await submitComparison("win");
+    void submitComparison("win");
     recordComparison("win");
-    await fetchNewPair();
+    fetchNewPair();
   };
 
   // Handle selection of track B
-  const handleSelectB = async () => {
+  const handleSelectB = () => {
     if (!reviewStore.currentPair) return;
 
-    await submitComparison("loss");
+    void submitComparison("loss");
     recordComparison("loss");
-    await fetchNewPair();
+    fetchNewPair();
   };
 
   // Handle draw
-  const handleDraw = async () => {
+  const handleDraw = () => {
     if (!reviewStore.currentPair) return;
 
-    await submitComparison("draw");
+    void submitComparison("draw");
     recordComparison("draw");
-    await fetchNewPair();
+    fetchNewPair();
   };
 
   // Handle skip
-  const handleSkip = async () => {
+  const handleSkip = () => {
     recordComparison("skip");
-    await fetchNewPair();
+    fetchNewPair();
   };
 
   // Handle quit
@@ -172,7 +252,7 @@ export const Review = () => {
     if (!reviewStore.currentPair) {
       fetchNewPair();
     }
-  });
+  }, []);
 
   return (
     <div class="review-container">
@@ -184,7 +264,9 @@ export const Review = () => {
 
       <Show when={reviewStore.error}>
         <div class="error-banner" role="alert">
-          <p>{reviewStore.error}</p>
+          <pre>
+            <code>{JSON.stringify(reviewStore.error, null, 2)}</code>
+          </pre>
           <button onClick={fetchNewPair}>Try Again</button>
           <button onClick={handleQuit}>Return Home</button>
         </div>

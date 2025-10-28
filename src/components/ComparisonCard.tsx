@@ -1,8 +1,9 @@
 import { Show } from "solid-js";
-import type { Track } from "../schemas/track";
+
+import type { TrackSubset } from "../stores/reviewStore";
 
 export interface ComparisonCardProps {
-  track: Track;
+  track: TrackSubset;
   side: "A" | "B";
   keyHint: string;
   isPlaying: boolean;
@@ -25,7 +26,10 @@ export const ComparisonCard = (props: ComparisonCardProps) => {
     >
       <div class="card-header">
         <div class="card-side-label">Track {props.side}</div>
-        <div class="card-key-hint" aria-label={`Press ${props.keyHint} to select`}>
+        <div
+          class="card-key-hint"
+          aria-label={`Press ${props.keyHint} to select`}
+        >
           Key: <kbd>{props.keyHint}</kbd>
         </div>
       </div>
@@ -37,15 +41,11 @@ export const ComparisonCard = (props: ComparisonCardProps) => {
           <p class="track-album">{props.track.album || "Unknown Album"}</p>
 
           <div class="track-metadata">
-            <Show when={props.track.original_year}>
-              <span class="metadata-item">{props.track.original_year}</span>
-            </Show>
-            <Show when={props.track.length}>
-              <span class="metadata-item">
-                {formatDuration(props.track.length!)}
-              </span>
-            </Show>
-            <Show when={props.track.score !== null && props.track.score !== undefined}>
+            <Show
+              when={
+                props.track.score !== null && props.track.score !== undefined
+              }
+            >
               <span class="metadata-item score">
                 Score: {props.track.score!.toFixed(0)}
               </span>
