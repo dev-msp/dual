@@ -1,0 +1,205 @@
+// ===== Button System =====
+// Comprehensive button styling with variants and states
+
+// Base button styles
+button,
+[role="button"],
+.btn {
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-width) solid transparent;
+  border-radius: var(--border-radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  white-space: nowrap;
+  text-decoration: none;
+
+  // Remove default browser button styles
+  margin: 0;
+  background: none;
+
+  // Focus visible (keyboard navigation)
+  &:focus-visible {
+    outline: 2px solid var(--theme-focus);
+    outline-offset: 2px;
+  }
+
+  // Disabled state
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  // Reduce motion
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+// ===== Button Variants =====
+
+// Primary button (Select Track, main actions)
+.btn-primary,
+button[type="submit"],
+.btn-select {
+  background-color: var(--theme-accent);
+  color: white;
+  box-shadow: var(--shadow-md);
+
+  &:hover:not(:disabled) {
+    background-color: var(--theme-active);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--pico-color-blue-700);
+    transform: translateY(0);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+// Secondary button (Skip, Draw, alternative actions)
+.btn-secondary,
+.btn-skip,
+.btn-draw {
+  background-color: var(--theme-dark);
+  color: var(--theme-fg);
+  border-color: var(--border-color);
+
+  &:hover:not(:disabled) {
+    background-color: var(--theme-hover);
+    box-shadow: var(--shadow-md);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--pico-color-azure-600);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+// Subtle button (Return Home, secondary navigation)
+.btn-subtle,
+.btn-return {
+  background-color: transparent;
+  color: var(--theme-fg-secondary);
+  border-color: transparent;
+
+  &:hover:not(:disabled) {
+    background-color: var(--theme-dark);
+    color: var(--theme-fg);
+    border-color: var(--border-color);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--pico-color-azure-600);
+  }
+}
+
+// Action button (Generic actions)
+.btn-action {
+  background-color: var(--theme-dark);
+  color: var(--theme-fg);
+
+  &:hover:not(:disabled) {
+    background-color: var(--theme-hover);
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--pico-color-azure-600);
+  }
+}
+
+// ===== Button Sizes =====
+.btn-sm {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
+.btn-md {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-size-base);
+}
+
+.btn-lg {
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-lg);
+}
+
+// ===== Button Badges (Keyboard Shortcuts) =====
+.btn-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 var(--space-1);
+  border-radius: 4px;
+  background-color: rgba(255, 255, 255, 0.15);
+  color: var(--theme-fg-muted);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+// ===== Button Icons =====
+.btn-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+// ===== Button Groups =====
+.btn-group {
+  display: inline-flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+
+  button,
+  .btn,
+  [role="button"] {
+    flex: 0 1 auto;
+  }
+}
+
+.btn-group-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+// ===== Button Block (Full Width) =====
+.btn-block {
+  display: block;
+  width: 100%;
+}
+
+// ===== Play Button Specific =====
+.btn-play,
+[class*="play"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+
+  &::before {
+    content: "▶";
+    font-size: 0.6em;
+    margin-right: 0.25em;
+  }
+}

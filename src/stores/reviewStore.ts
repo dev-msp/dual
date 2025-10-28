@@ -13,6 +13,7 @@ export const trackSubset = z.object({
   artist: z.string().nullable(),
   album: z.string().nullable(),
   score: z.number().nullable(),
+  artwork: z.string().nullable().optional(),
 });
 
 export type TrackSubset = z.infer<typeof trackSubset>;

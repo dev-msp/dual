@@ -1,4 +1,4 @@
-// text-wrapping utility
+// ===== Text Utilities =====
 .u-no-wrap {
   overflow: hidden;
   text-align: left;
@@ -6,7 +6,192 @@
   white-space: preserve nowrap;
 }
 
-// scroll utility
+.u-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.u-clamp-lines-2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.u-clamp-lines-3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.u-select-none {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+}
+
+// ===== Display Utilities =====
 .u-scroll-y {
   overflow-y: scroll;
+}
+
+.u-scroll-x {
+  overflow-x: scroll;
+}
+
+.u-hide {
+  display: none !important;
+}
+
+.u-show {
+  display: block !important;
+}
+
+.u-visibility-hidden {
+  visibility: hidden;
+}
+
+.u-invisible {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+// ===== Spacing Utilities =====
+.u-margin-0 { margin: 0; }
+.u-padding-0 { padding: 0; }
+
+.u-margin-auto {
+  margin: auto;
+}
+
+.u-mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+// ===== Flexbox Utilities =====
+.u-flex {
+  display: flex;
+}
+
+.u-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.u-flex-col {
+  flex-direction: column;
+}
+
+.u-flex-wrap {
+  flex-wrap: wrap;
+}
+
+.u-flex-nowrap {
+  flex-wrap: nowrap;
+}
+
+.u-gap-1 { gap: var(--space-1); }
+.u-gap-2 { gap: var(--space-2); }
+.u-gap-3 { gap: var(--space-3); }
+.u-gap-4 { gap: var(--space-4); }
+
+// ===== Grid Utilities =====
+.u-grid {
+  display: grid;
+}
+
+// ===== Alignment Utilities =====
+.u-text-center { text-align: center; }
+.u-text-left { text-align: left; }
+.u-text-right { text-align: right; }
+
+// ===== Focus & Interactive Utilities =====
+.u-focus-ring {
+  outline: 2px solid var(--theme-focus);
+  outline-offset: 2px;
+}
+
+.u-focus-within-ring:focus-within {
+  outline: 2px solid var(--theme-focus);
+  outline-offset: 2px;
+}
+
+// ===== Opacity Utilities =====
+.u-opacity-50 { opacity: 0.5; }
+.u-opacity-75 { opacity: 0.75; }
+.u-opacity-90 { opacity: 0.9; }
+
+// ===== Pointer Utilities =====
+.u-cursor-pointer { cursor: pointer; }
+.u-cursor-default { cursor: default; }
+.u-cursor-wait { cursor: wait; }
+.u-cursor-not-allowed { cursor: not-allowed; }
+.u-pointer-events-none { pointer-events: none; }
+.u-pointer-events-auto { pointer-events: auto; }
+
+// ===== Aspect Ratio Utilities =====
+.u-aspect-square { aspect-ratio: 1 / 1; }
+.u-aspect-video { aspect-ratio: 16 / 9; }
+.u-aspect-4-3 { aspect-ratio: 4 / 3; }
+
+// ===== Overflow Utilities =====
+.u-overflow-hidden { overflow: hidden; }
+.u-overflow-visible { overflow: visible; }
+.u-overflow-auto { overflow: auto; }
+
+// ===== Reduced Motion Support =====
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .u-no-motion {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+// ===== Accessibility Utilities =====
+.u-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.u-skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--theme-accent);
+  color: white;
+  padding: var(--space-2) var(--space-3);
+  text-decoration: none;
+  z-index: 100;
+
+  &:focus {
+    top: 0;
+  }
+}
+
+// ===== Responsive Display =====
+@media (width <= 768px) {
+  .u-hide-mobile { display: none !important; }
+}
+
+@media (width >= 769px) {
+  .u-hide-desktop { display: none !important; }
 }

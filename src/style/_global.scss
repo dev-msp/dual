@@ -1,7 +1,10 @@
+// ===== Base Styles =====
 body {
   background-color: var(--theme-bg);
   color: var(--theme-fg);
-  font-family: Inter, "Open Sans", "Helvetica Neue", sans-serif;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
 }
 
 #root {
@@ -9,7 +12,78 @@ body {
   height: 100vh;
 }
 
-// remove pico's max-width on text elements
+// ===== Typography Hierarchy =====
+// Remove pico's max-width constraints for flexibility
 @media (width >= 480px) {
-  h1, p { max-width: none; }
+  h1, h2, h3, h4, h5, h6, p { max-width: none; }
 }
+
+// Heading styles
+h1, h2, h3, h4, h5, h6 {
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  margin-top: var(--space-4);
+  margin-bottom: var(--space-2);
+  color: var(--theme-fg);
+}
+
+h1 {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--space-3);
+}
+
+h2 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--space-2);
+}
+
+h3 {
+  font-size: var(--font-size-lg);
+}
+
+h4, h5, h6 {
+  font-size: var(--font-size-base);
+}
+
+// Text variants
+p {
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--space-2);
+}
+
+// Text color variants (semantic)
+.text-primary {
+  color: var(--theme-fg);
+}
+
+.text-secondary {
+  color: var(--theme-fg-secondary);
+}
+
+.text-muted {
+  color: var(--theme-fg-muted);
+}
+
+.text-accent {
+  color: var(--theme-accent);
+}
+
+// Font size utilities
+.text-xs { font-size: var(--font-size-xs); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg { font-size: var(--font-size-lg); }
+.text-xl { font-size: var(--font-size-xl); }
+.text-2xl { font-size: var(--font-size-2xl); }
+
+// Font weight utilities
+.font-regular { font-weight: var(--font-weight-regular); }
+.font-medium { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold { font-weight: var(--font-weight-bold); }
+
+// Line height utilities
+.leading-tight { line-height: var(--line-height-tight); }
+.leading-normal { line-height: var(--line-height-normal); }
+.leading-relaxed { line-height: var(--line-height-relaxed); }

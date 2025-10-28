@@ -24,51 +24,83 @@ export const ComparisonCard = (props: ComparisonCardProps) => {
       role="article"
       aria-label={`Track ${props.side}: ${props.track.title}`}
     >
-      <div class="card-header">
-        <div class="card-side-label">Track {props.side}</div>
-        <div
-          class="card-key-hint"
-          aria-label={`Press ${props.keyHint} to select`}
+      {/* Album Artwork Section */}
+      <div class="comparison-card__artwork">
+        <Show
+          when={props.track.artwork}
+          fallback={
+            <div class="comparison-card__artwork-placeholder">
+              ♫
+            </div>
+          }
         >
-          Key: <kbd>{props.keyHint}</kbd>
-        </div>
+          <img
+            src={props.track.artwork}
+            alt={`${props.track.title} album artwork`}
+            loading="lazy"
+          />
+        </Show>
+        <div class="comparison-card__artwork-overlay" />
       </div>
 
-      <div class="card-content">
-        <div class="track-info">
-          <h2 class="track-title">{props.track.title || "Unknown Track"}</h2>
-          <p class="track-artist">{props.track.artist || "Unknown Artist"}</p>
-          <p class="track-album">{props.track.album || "Unknown Album"}</p>
-
-          <div class="track-metadata">
-            <Show
-              when={
-                props.track.score !== null && props.track.score !== undefined
-              }
-            >
-              <span class="metadata-item score">
-                Score: {props.track.score!.toFixed(0)}
+      {/* Content Section */}
+      <div class="comparison-card__content">
+        {/* Header with Track Label and Score */}
+        <div class="comparison-card__header">
+          <span class="comparison-card__label">Track {props.side}</span>
+          <div class="comparison-card__score">
+            <span class="comparison-card__score-label">Score</span>
+            <Show when={props.track.score !== null && props.track.score !== undefined}>
+              <span class="comparison-card__score-value">
+                {props.track.score!.toFixed(0)}
               </span>
             </Show>
           </div>
         </div>
 
-        <div class="card-actions">
-          <button
-            class="btn-play"
-            onClick={props.onPlay}
-            aria-label={props.isPlaying ? "Pause track" : "Play track"}
-          >
-            {props.isPlaying ? "⏸" : "▶"}
-          </button>
+        {/* Track Information */}
+        <h2 class="comparison-card__title">
+          {props.track.title || "Unknown Track"}
+        </h2>
+        <p class="comparison-card__artist">
+          {props.track.artist || "Unknown Artist"}
+        </p>
+        <Show when={props.track.album}>
+          <p class="comparison-card__album">
+            {props.track.album}
+          </p>
+        </Show>
 
-          <button
-            class="btn-select"
-            onClick={props.onSelect}
-            aria-label={`Select track ${props.side} as winner`}
+        {/* Footer with Keyboard Hint and Actions */}
+        <div class="comparison-card__footer">
+          <div
+            class="comparison-card__key-hint"
+            aria-label={`Press ${props.keyHint} to select`}
           >
-            Select Track {props.side}
-          </button>
+            <small>
+              Press <kbd class="btn-badge">{props.keyHint}</kbd> or click
+            </small>
+          </div>
+
+          <div class="comparison-card__actions">
+            <button
+              class="btn-primary btn-play comparison-card__action-btn"
+              onClick={props.onPlay}
+              aria-label={props.isPlaying ? "Pause track" : "Play track"}
+              title={props.isPlaying ? "Pause" : "Play"}
+            >
+              {props.isPlaying ? "⏸" : "▶"} Play
+            </button>
+
+            <button
+              class="btn-primary btn-select comparison-card__action-btn"
+              onClick={props.onSelect}
+              aria-label={`Select track ${props.side} as winner`}
+              title={`Select Track ${props.side}`}
+            >
+              Select
+            </button>
+          </div>
         </div>
       </div>
     </div>

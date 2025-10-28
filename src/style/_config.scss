@@ -3,21 +3,81 @@
 @use "@picocss/pico/scss/colors/utilities";
 
 :root {
-  // theme colors
-  --theme-darkest: var(--pico-color-azure-900);
-  --theme-darker: var(--pico-color-azure-800);
-  --theme-bg: var(--theme-darkest);
-  --theme-fg: var(--pico-color-azure-100);
+  // ===== Spacing Scale =====
+  --pico-spacing: 0.4rem;
 
-  // spacing scale [1]
   @each $size in ( "1" "2" "3" "4" "5" "6" "7" "8" ) {
     --space-#{$size}: calc(var(--pico-spacing) * #{$size});
   }
 
-  // pico overrides [1]
-  --pico-spacing: 0.4rem;
+  // ===== Color Palette =====
+  // Primary theme colors
+  --theme-darkest: var(--pico-color-azure-900);
+  --theme-darker: var(--pico-color-azure-800);
+  --theme-dark: var(--pico-color-azure-700);
+  --theme-light: var(--pico-color-azure-200);
+  --theme-lighter: var(--pico-color-azure-100);
+
+  // Background & Text
+  --theme-bg: var(--theme-darkest);
+  --theme-fg: var(--theme-lighter);
+  --theme-fg-secondary: var(--pico-color-azure-400);
+  --theme-fg-muted: var(--pico-color-azure-300);
+
+  // Interactive & Semantic
+  --theme-accent: var(--pico-color-blue-500);
+  --theme-hover: var(--pico-color-azure-700);
+  --theme-active: var(--pico-color-blue-600);
+  --theme-focus: var(--pico-color-blue-400);
+
+  // ===== Typography =====
+  // Base typography
+  --font-family-base: Inter, "Open Sans", "Helvetica Neue", sans-serif;
+  --font-size-base: 14px;
+  --line-height-base: 1.6;
+
+  // Type scale
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 28px;
+
+  // Line heights
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+
+  // Font weights
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  // ===== Effects & Depth =====
+  // Shadows
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.6);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.7);
+
+  // Transitions
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 250ms ease-out;
+  --transition-slow: 350ms ease-out;
+
+  // Border styles
+  --border-radius-sm: var(--space-1);
+  --border-radius-md: var(--space-2);
+  --border-radius-lg: var(--space-3);
+  --border-color: var(--pico-color-azure-700);
+  --border-width: 1px;
+
+  // ===== Pico Overrides =====
   --pico-background-color: var(--theme-bg);
   --pico-color: var(--theme-fg);
-  --pico-font-size: 14px;
-  --pico-border-radius: var(--space-2);
+  --pico-font-size: var(--font-size-base);
+  --pico-border-radius: var(--border-radius-md);
 }

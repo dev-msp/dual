@@ -1,0 +1,352 @@
+// ===== Review Page Layout =====
+// Comprehensive styling for the track comparison review page
+
+.review-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100%;
+  background-color: var(--theme-bg);
+  color: var(--theme-fg);
+  overflow: hidden;
+}
+
+// ===== Main Content Area =====
+.review-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-4);
+  gap: var(--space-4);
+
+  @media (width <= 768px) {
+    padding: var(--space-3);
+    gap: var(--space-3);
+  }
+
+  @media (width <= 480px) {
+    padding: var(--space-2);
+    gap: var(--space-2);
+  }
+}
+
+// ===== Scrollbar Styling =====
+.review-content {
+  scrollbar-width: thin;
+  scrollbar-color: var(--theme-darker) var(--theme-bg);
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: var(--theme-bg);
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--theme-darker);
+    border-radius: 4px;
+
+    &:hover {
+      background: var(--theme-dark);
+    }
+  }
+}
+
+// ===== Comparison Section =====
+.review-comparison {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  flex: 1;
+  min-height: 500px;
+
+  @media (width <= 768px) {
+    flex-direction: column;
+    gap: var(--space-3);
+    min-height: auto;
+  }
+
+  @media (width <= 480px) {
+    padding: var(--space-2) 0;
+    gap: var(--space-2);
+  }
+}
+
+// Individual comparison track containers
+.review-track {
+  display: flex;
+  flex: 1;
+  max-width: 340px;
+  align-self: center;
+
+  @media (width <= 768px) {
+    max-width: 100%;
+    align-self: auto;
+  }
+}
+
+// Centered container for optimal width
+.review-comparison-center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+// ===== Header Section =====
+.review-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-width) solid var(--border-color);
+
+  @media (width <= 768px) {
+    padding-bottom: var(--space-3);
+  }
+}
+
+.review-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--theme-fg);
+  margin: 0;
+}
+
+.review-subtitle {
+  font-size: var(--font-size-base);
+  color: var(--theme-fg-secondary);
+  margin: 0;
+}
+
+// ===== VS Divider =====
+.review-vs-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--theme-accent);
+  opacity: 0.7;
+  min-width: 50px;
+
+  @media (width <= 768px) {
+    min-width: auto;
+    padding: var(--space-2);
+    font-size: var(--font-size-base);
+  }
+}
+
+// ===== Footer / Control Band =====
+.review-footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--border-width) solid var(--border-color);
+  margin-top: auto;
+
+  @media (width <= 768px) {
+    padding-top: var(--space-3);
+    gap: var(--space-2);
+  }
+}
+
+// ===== Loading State =====
+.review-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  font-size: var(--font-size-lg);
+  color: var(--theme-fg-muted);
+
+  &::after {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: var(--space-2);
+    border: 2px solid var(--theme-dark);
+    border-top-color: var(--theme-accent);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// ===== Empty State =====
+.review-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.review-empty-icon {
+  font-size: var(--font-size-2xl);
+  opacity: 0.5;
+}
+
+.review-empty-message {
+  font-size: var(--font-size-lg);
+  color: var(--theme-fg-secondary);
+}
+
+// ===== Error State =====
+.review-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: var(--space-2);
+  text-align: center;
+  padding: var(--space-4);
+  background-color: var(--theme-darker);
+  border: 2px solid var(--pico-color-red-500);
+  border-radius: var(--border-radius-lg);
+}
+
+.review-error-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--pico-color-red-400);
+}
+
+.review-error-message {
+  font-size: var(--font-size-base);
+  color: var(--theme-fg-secondary);
+}
+
+// ===== Keyboard Shortcuts Help =====
+.review-shortcuts {
+  display: flex;
+  gap: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--theme-fg-muted);
+  padding: var(--space-2);
+  background-color: var(--theme-dark);
+  border-radius: var(--border-radius-md);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+
+  @media (width <= 480px) {
+    display: none; // Hide on mobile
+  }
+}
+
+.review-shortcut {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.review-shortcut-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: var(--theme-darker);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-xs);
+  color: var(--theme-accent);
+}
+
+// ===== Responsive Full Layout =====
+@media (width <= 768px) {
+  .review-container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .review-content {
+    height: auto;
+    overflow-y: auto;
+  }
+
+  .review-comparison {
+    flex-direction: column;
+  }
+
+  .review-track {
+    max-width: 100%;
+  }
+
+  .review-footer {
+    flex-direction: column;
+  }
+}
+
+// ===== Print Styles =====
+@media print {
+  .review-container {
+    background-color: white;
+    color: black;
+  }
+
+  .review-content {
+    padding: 20px;
+  }
+
+  .comparison-card {
+    page-break-inside: avoid;
+  }
+
+  .control-band {
+    display: none;
+  }
+}
+
+// ===== Animations =====
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.review-content {
+  animation: fadeIn var(--transition-normal);
+}
+
+// Reduce motion support
+@media (prefers-reduced-motion: reduce) {
+  .review-content {
+    animation: none;
+  }
+
+  .review-loading::after {
+    animation: none;
+  }
+}
+
+// ===== Dark Mode Specific =====
+@media (prefers-color-scheme: dark) {
+  .review-container {
+    // Already optimized via design tokens
+  }
+}

@@ -1,0 +1,287 @@
+// ===== Control Band Component =====
+// Styling for toolbar with stats, controls, and actions
+
+.control-band {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--theme-darker);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+  margin: var(--space-4) 0;
+  transition: box-shadow var(--transition-fast);
+
+  @media (width <= 768px) {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+}
+
+// ===== Statistics Section =====
+.control-band__stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--border-width) solid var(--border-color);
+}
+
+.control-band__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-1);
+}
+
+.control-band__stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--theme-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--font-weight-semibold);
+}
+
+.control-band__stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--theme-accent);
+  line-height: 1;
+}
+
+// ===== Controls Section =====
+.control-band__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+// Control group for related controls
+.control-band__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.control-band__group-label {
+  font-size: var(--font-size-xs);
+  color: var(--theme-fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--font-weight-semibold);
+  padding: 0 var(--space-1);
+}
+
+// ===== Select/Dropdown Styling =====
+.control-band__select,
+select {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--theme-dark);
+  color: var(--theme-fg);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e3e8ef' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--space-2) center;
+  background-size: 20px;
+  padding-right: var(--space-4);
+
+  &:hover {
+    border-color: var(--theme-light);
+    background-color: var(--theme-hover);
+  }
+
+  &:focus,
+  &:focus-visible {
+    outline: 2px solid var(--theme-focus);
+    outline-offset: 2px;
+    border-color: var(--theme-accent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+}
+
+// ===== Checkbox Styling =====
+.control-band__checkbox,
+input[type="checkbox"] {
+  cursor: pointer;
+  margin-right: var(--space-2);
+  accent-color: var(--theme-accent);
+  transition: all var(--transition-fast);
+
+  &:hover {
+    transform: scale(1.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--theme-focus);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    &:hover {
+      transform: none;
+    }
+  }
+}
+
+.control-band__checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  color: var(--theme-fg);
+  user-select: none;
+
+  input[type="checkbox"] {
+    margin: 0;
+  }
+}
+
+// ===== Action Buttons Section =====
+.control-band__actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: var(--border-width) solid var(--border-color);
+
+  @media (width <= 480px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.control-band__action-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+// ===== Button Styles in Control Band =====
+.control-band button,
+.control-band [role="button"],
+.control-band .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.control-band__primary-btn {
+  grid-column: 1 / -1;
+
+  @media (width >= 480px) {
+    grid-column: auto;
+  }
+}
+
+// ===== Strategy Dropdown =====
+.control-band__strategy-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--theme-fg-secondary);
+  margin-bottom: var(--space-1);
+}
+
+// ===== Info Display =====
+.control-band__info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background-color: var(--theme-dark);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  color: var(--theme-fg-muted);
+}
+
+.control-band__info-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.control-band__info-text {
+  margin: 0;
+}
+
+// ===== Responsive Layout =====
+@media (width >= 768px) {
+  .control-band {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+  }
+
+  .control-band__stats {
+    order: 1;
+    border-bottom: none;
+    border-right: var(--border-width) solid var(--border-color);
+    padding: 0 var(--space-4) 0 0;
+    margin: 0;
+  }
+
+  .control-band__controls {
+    order: 2;
+    flex: 1;
+    flex-direction: row;
+    gap: var(--space-3);
+  }
+
+  .control-band__actions {
+    order: 3;
+    border-top: none;
+    border-left: var(--border-width) solid var(--border-color);
+    padding: 0 0 0 var(--space-4);
+    margin: 0;
+    grid-template-columns: auto 1fr 1fr;
+    gap: var(--space-2);
+  }
+}
+
+@media (width <= 480px) {
+  .control-band {
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .control-band__stats {
+    gap: var(--space-2);
+  }
+
+  .control-band__stat-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .control-band__select,
+  select {
+    font-size: 16px; // Prevents zoom on iOS
+  }
+}
+
+// ===== Loading State =====
+.control-band.is-loading {
+  opacity: 0.7;
+  pointer-events: none;
+
+  button {
+    cursor: wait;
+  }
+}
+
+// ===== Disabled State =====
+.control-band[disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}

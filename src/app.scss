@@ -1,6 +1,10 @@
 @use 'style/config';
 @use 'style/global';
 @use 'style/utilities';
+@use 'style/blocks/buttons';
 @use 'style/blocks/app-container';
 @use 'style/blocks/order';
 @use 'style/blocks/data-table';
+@use 'style/blocks/comparison-card';
+@use 'style/blocks/control-band';
+@use 'style/blocks/review';

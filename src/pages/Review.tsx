@@ -256,33 +256,64 @@ export const Review = () => {
 
   return (
     <div class="review-container">
+      {/* Loading State */}
       <Show when={reviewStore.loading}>
-        <div class="loading-overlay">
+        <div class="review-loading" role="status" aria-live="polite">
           <p>Loading comparison...</p>
         </div>
       </Show>
 
+      {/* Error State */}
       <Show when={reviewStore.error}>
-        <div class="error-banner" role="alert">
-          <pre>
-            <code>{JSON.stringify(reviewStore.error, null, 2)}</code>
-          </pre>
-          <button onClick={fetchNewPair}>Try Again</button>
-          <button onClick={handleQuit}>Return Home</button>
+        <div class="review-error" role="alert">
+          <div class="review-error-title">Error Loading Comparison</div>
+          <div class="review-error-message">
+            <pre>
+              <code>{JSON.stringify(reviewStore.error, null, 2)}</code>
+            </pre>
+          </div>
+          <div class="review-actions">
+            <button class="btn-primary" onClick={fetchNewPair}>
+              Try Again
+            </button>
+            <button class="btn-subtle" onClick={handleQuit}>
+              Return Home
+            </button>
+          </div>
         </div>
       </Show>
 
+      {/* Main Content */}
       <Show when={reviewStore.currentPair && !reviewStore.loading}>
-        <div class="comparison-layout">
-          <ComparisonCard
-            track={trackA()!}
-            side="A"
-            keyHint="A"
-            isPlaying={audioState.currentTrack === "A" && audioState.isPlaying}
-            onPlay={() => audioControls.playTrack("A")}
-            onSelect={handleSelectA}
-          />
+        <div class="review-content">
+          {/* Comparison Cards Section */}
+          <div class="review-comparison">
+            <div class="review-track">
+              <ComparisonCard
+                track={trackA()!}
+                side="A"
+                keyHint="A"
+                isPlaying={audioState.currentTrack === "A" && audioState.isPlaying}
+                onPlay={() => audioControls.playTrack("A")}
+                onSelect={handleSelectA}
+              />
+            </div>
 
+            <div class="review-vs-divider">vs</div>
+
+            <div class="review-track">
+              <ComparisonCard
+                track={trackB()!}
+                side="B"
+                keyHint="B"
+                isPlaying={audioState.currentTrack === "B" && audioState.isPlaying}
+                onPlay={() => audioControls.playTrack("B")}
+                onSelect={handleSelectB}
+              />
+            </div>
+          </div>
+
+          {/* Control Band */}
           <ControlBand
             stats={reviewStore.stats}
             strategy={reviewStore.settings.selectionStrategy}
@@ -295,20 +326,17 @@ export const Review = () => {
             onToggleAutoplay={toggleAutoplay}
           />
 
-          <ComparisonCard
-            track={trackB()!}
-            side="B"
-            keyHint="B"
-            isPlaying={audioState.currentTrack === "B" && audioState.isPlaying}
-            onPlay={() => audioControls.playTrack("B")}
-            onSelect={handleSelectB}
-          />
-        </div>
-
-        <div class="review-footer">
-          <button class="btn-quit" onClick={handleQuit}>
-            Return Home <kbd>Q</kbd>
-          </button>
+          {/* Return Home Button */}
+          <div class="review-footer">
+            <button
+              class="btn-subtle btn-return"
+              onClick={handleQuit}
+              aria-label="Return to home (press Q)"
+              title="Return Home (Q)"
+            >
+              Return Home <span class="btn-badge">Q</span>
+            </button>
+          </div>
         </div>
       </Show>
     </div>
