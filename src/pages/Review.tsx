@@ -1,11 +1,12 @@
 import { useNavigate } from "@solidjs/router";
 import * as rx from "rxjs";
 import * as op from "rxjs/operators";
-import { createEffect, Show, onCleanup } from "solid-js";
+import { createEffect, Show, onCleanup, createSignal } from "solid-js";
 import z from "zod";
 
 import { ComparisonCard } from "../components/ComparisonCard";
 import { ControlBand } from "../components/ControlBand";
+import { ScoreDisplay, type ScoreUpdateInfo } from "../components/ScoreDisplay";
 import { useKeyboard } from "../hooks/useKeyboard";
 import { useReviewAudio } from "../hooks/useReviewAudio";
 import { filterMap } from "../lib/reactive";
@@ -47,11 +48,39 @@ const pairsResponseSchema = z.object({
 interface ComparisonResponse {
   success: boolean;
   error?: string;
+  trackA?: {
+    id: number;
+    oldRating: number;
+    newRating: number;
+    change: number;
+  };
+  trackB?: {
+    id: number;
+    oldRating: number;
+    newRating: number;
+    change: number;
+  };
 }
 
 const comparisonResponseSchema = z.object({
   success: z.boolean(),
   error: z.string().optional(),
+  trackA: z
+    .object({
+      id: z.number(),
+      oldRating: z.number(),
+      newRating: z.number(),
+      change: z.number(),
+    })
+    .optional(),
+  trackB: z
+    .object({
+      id: z.number(),
+      oldRating: z.number(),
+      newRating: z.number(),
+      change: z.number(),
+    })
+    .optional(),
 });
 
 // RxJs Primitives for pair fetching
@@ -153,6 +182,11 @@ export const Review = () => {
   const trackB = () => reviewStore.currentPair?.trackB ?? null;
   const autoplay = () => reviewStore.settings.autoplay;
 
+  // State for score display
+  const [scoreUpdateA, setScoreUpdateA] = createSignal<ScoreUpdateInfo | null>(null);
+  const [scoreUpdateB, setScoreUpdateB] = createSignal<ScoreUpdateInfo | null>(null);
+  const [isShowingScores, setIsShowingScores] = createSignal(false);
+
   const [audioState, audioControls] = useReviewAudio(trackA, trackB, autoplay);
 
   // Create the RxJs pair fetching pipeline
@@ -169,6 +203,15 @@ export const Review = () => {
   // Trigger a new pair fetch by emitting on the subject
   const fetchNewPair = () => {
     requestNewPair$.next();
+  };
+
+  // Handle score display completion
+  const handleScoreDisplayComplete = () => {
+    setIsShowingScores(false);
+    setScoreUpdateA(null);
+    setScoreUpdateB(null);
+    // Fetch the next pair after score display is done
+    fetchNewPair();
   };
 
   // Submit comparison result to the API
@@ -192,11 +235,30 @@ export const Review = () => {
         await response.json(),
       );
 
-      if (!data.success) {
+      if (data.success && data.trackA && data.trackB) {
+        // Store the score updates and show the display
+        setScoreUpdateA({
+          side: "A",
+          oldRating: data.trackA.oldRating,
+          newRating: data.trackA.newRating,
+          change: data.trackA.change,
+        });
+        setScoreUpdateB({
+          side: "B",
+          oldRating: data.trackB.oldRating,
+          newRating: data.trackB.newRating,
+          change: data.trackB.change,
+        });
+        setIsShowingScores(true);
+      } else if (!data.success) {
         console.error("Comparison submission failed:", data.error);
+        // Still fetch next pair on error
+        fetchNewPair();
       }
     } catch (err) {
       console.error("Error submitting comparison:", err);
+      // Still fetch next pair on error
+      fetchNewPair();
     }
   };
 
@@ -206,7 +268,6 @@ export const Review = () => {
 
     void submitComparison("win");
     recordComparison("win");
-    fetchNewPair();
   };
 
   // Handle selection of track B
@@ -215,7 +276,6 @@ export const Review = () => {
 
     void submitComparison("loss");
     recordComparison("loss");
-    fetchNewPair();
   };
 
   // Handle draw
@@ -224,7 +284,6 @@ export const Review = () => {
 
     void submitComparison("draw");
     recordComparison("draw");
-    fetchNewPair();
   };
 
   // Handle skip
@@ -256,6 +315,15 @@ export const Review = () => {
 
   return (
     <div class="review-container">
+      {/* Score Display Overlay */}
+      <Show when={isShowingScores()}>
+        <ScoreDisplay
+          trackA={scoreUpdateA()}
+          trackB={scoreUpdateB()}
+          onComplete={handleScoreDisplayComplete}
+        />
+      </Show>
+
       {/* Loading State */}
       <Show when={reviewStore.loading}>
         <div class="review-loading" role="status" aria-live="polite">
