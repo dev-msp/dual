@@ -3,13 +3,14 @@ import { z } from "zod/v4";
 
 import type { Db } from "../db";
 import { scoredItems, itemsWithScore } from "../db/query";
+import { DEFAULT_RATING, DEFAULT_RD, DEFAULT_VOLATILITY } from "../utils/glicko2";
 
 import type { Ordering } from "./index";
 
 const pairSelectionSchema = z.object({
   // Selection strategy
   strategy: z
-    .enum(["random", "uncertain", "similar_scores"])
+    .enum(["random", "uncertain", "similar_scores", "high_uncertainty", "mixed_uncertainty"])
     .optional()
     .default("random"),
 
@@ -33,6 +34,8 @@ interface TrackPair {
     artist: string | null;
     album: string | null;
     score: number | null;
+    rd: number | null;
+    volatility: number | null;
   };
   trackB: {
     id: number;
@@ -40,6 +43,8 @@ interface TrackPair {
     artist: string | null;
     album: string | null;
     score: number | null;
+    rd: number | null;
+    volatility: number | null;
   };
 }
 
@@ -59,6 +64,16 @@ function parseOrder(orderStr: string): Ordering[] {
   });
 }
 
+type Track = {
+  id: number;
+  title: string | null;
+  artist: string | null;
+  album: string | null;
+  score: number | null;
+  rd: number | null;
+  volatility: number | null;
+};
+
 /**
  * Get a pool of tracks based on filters
  */
@@ -66,13 +81,7 @@ function getTrackPool(
   db: Db,
   orderArray?: string[],
   limitCount?: number,
-): Array<{
-  id: number;
-  title: string | null;
-  artist: string | null;
-  album: string | null;
-  score: number | null;
-}> {
+): Track[] {
   const subquery = db.$with("items_with_score").as(itemsWithScore);
   let query = db
     .with(subquery)
@@ -82,6 +91,8 @@ function getTrackPool(
       artist: scoredItems.artist,
       album: scoredItems.album,
       score: scoredItems.score,
+      rd: scoredItems.rd,
+      volatility: scoredItems.volatility,
     })
     .from(scoredItems);
 
@@ -108,16 +119,7 @@ function getTrackPool(
 /**
  * Randomly select n pairs from the track pool
  */
-function selectRandomPairs(
-  tracks: Array<{
-    id: number;
-    title: string | null;
-    artist: string | null;
-    album: string | null;
-    score: number | null;
-  }>,
-  count: number,
-): TrackPair[] {
+function selectRandomPairs(tracks: Track[], count: number): TrackPair[] {
   const pairs: TrackPair[] = [];
   const shuffled = [...tracks].sort(() => Math.random() - 0.5);
 
@@ -132,6 +134,8 @@ function selectRandomPairs(
         artist: trackA.artist,
         album: trackA.album,
         score: trackA.score,
+        rd: trackA.rd,
+        volatility: trackA.volatility,
       },
       trackB: {
         id: trackB.id,
@@ -139,6 +143,8 @@ function selectRandomPairs(
         artist: trackB.artist,
         album: trackB.album,
         score: trackB.score,
+        rd: trackB.rd,
+        volatility: trackB.volatility,
       },
     });
   }
@@ -150,13 +156,7 @@ function selectRandomPairs(
  * Select pairs with similar scores (high uncertainty)
  */
 function selectUncertainPairs(
-  tracks: Array<{
-    id: number;
-    title: string | null;
-    artist: string | null;
-    album: string | null;
-    score: number | null;
-  }>,
+  tracks: Track[],
   count: number,
   uncertaintyWindow: number,
 ): TrackPair[] {
@@ -164,8 +164,8 @@ function selectUncertainPairs(
 
   // Sort by score
   const sorted = [...tracks].sort((a, b) => {
-    const scoreA = a.score ?? 1500;
-    const scoreB = b.score ?? 1500;
+    const scoreA = a.score ?? DEFAULT_RATING;
+    const scoreB = b.score ?? DEFAULT_RATING;
     return scoreA - scoreB;
   });
 
@@ -176,14 +176,14 @@ function selectUncertainPairs(
     if (usedIndices.has(i)) continue;
 
     const trackA = sorted[i];
-    const scoreA = trackA.score ?? 1500;
+    const scoreA = trackA.score ?? DEFAULT_RATING;
 
     // Find a track with similar score
     for (let j = i + 1; j < sorted.length; j++) {
       if (usedIndices.has(j)) continue;
 
       const trackB = sorted[j];
-      const scoreB = trackB.score ?? 1500;
+      const scoreB = trackB.score ?? DEFAULT_RATING;
 
       if (Math.abs(scoreA - scoreB) <= uncertaintyWindow) {
         pairs.push({
@@ -193,6 +193,8 @@ function selectUncertainPairs(
             artist: trackA.artist,
             album: trackA.album,
             score: trackA.score,
+            rd: trackA.rd,
+            volatility: trackA.volatility,
           },
           trackB: {
             id: trackB.id,
@@ -200,6 +202,8 @@ function selectUncertainPairs(
             artist: trackB.artist,
             album: trackB.album,
             score: trackB.score,
+            rd: trackB.rd,
+            volatility: trackB.volatility,
           },
         });
 
@@ -211,6 +215,163 @@ function selectUncertainPairs(
   }
 
   // If we didn't find enough uncertain pairs, fill with random
+  if (pairs.length < count) {
+    const remaining = sorted.filter((_, idx) => !usedIndices.has(idx));
+    const randomPairs = selectRandomPairs(remaining, count - pairs.length);
+    pairs.push(...randomPairs);
+  }
+
+  return pairs;
+}
+
+/**
+ * Select pairs prioritizing tracks with high RD (high uncertainty)
+ * Pairs tracks with similar RD values
+ */
+function selectHighUncertaintyPairs(tracks: Track[], count: number): TrackPair[] {
+  const pairs: TrackPair[] = [];
+
+  // Sort by RD (descending) to prioritize uncertain tracks
+  const sorted = [...tracks].sort((a, b) => {
+    const rdA = a.rd ?? DEFAULT_RD;
+    const rdB = b.rd ?? DEFAULT_RD;
+    return rdB - rdA; // Higher RD first
+  });
+
+  // Match tracks with similar RD levels
+  const usedIndices = new Set<number>();
+
+  for (let i = 0; i < sorted.length && pairs.length < count; i++) {
+    if (usedIndices.has(i)) continue;
+
+    const trackA = sorted[i];
+    const rdA = trackA.rd ?? DEFAULT_RD;
+
+    // Find a track with similar RD (within 50 points)
+    for (let j = i + 1; j < sorted.length; j++) {
+      if (usedIndices.has(j)) continue;
+
+      const trackB = sorted[j];
+      const rdB = trackB.rd ?? DEFAULT_RD;
+
+      if (Math.abs(rdA - rdB) <= 50) {
+        pairs.push({
+          trackA: {
+            id: trackA.id,
+            title: trackA.title,
+            artist: trackA.artist,
+            album: trackA.album,
+            score: trackA.score,
+            rd: trackA.rd,
+            volatility: trackA.volatility,
+          },
+          trackB: {
+            id: trackB.id,
+            title: trackB.title,
+            artist: trackB.artist,
+            album: trackB.album,
+            score: trackB.score,
+            rd: trackB.rd,
+            volatility: trackB.volatility,
+          },
+        });
+
+        usedIndices.add(i);
+        usedIndices.add(j);
+        break;
+      }
+    }
+  }
+
+  // Fill remaining with random pairs from unused tracks
+  if (pairs.length < count) {
+    const remaining = sorted.filter((_, idx) => !usedIndices.has(idx));
+    const randomPairs = selectRandomPairs(remaining, count - pairs.length);
+    pairs.push(...randomPairs);
+  }
+
+  return pairs;
+}
+
+/**
+ * Mixed uncertainty strategy: sometimes match similar uncertainties,
+ * sometimes match high-RD with low-RD tracks for calibration
+ */
+function selectMixedUncertaintyPairs(tracks: Track[], count: number): TrackPair[] {
+  const pairs: TrackPair[] = [];
+
+  // Sort by RD
+  const sorted = [...tracks].sort((a, b) => {
+    const rdA = a.rd ?? DEFAULT_RD;
+    const rdB = b.rd ?? DEFAULT_RD;
+    return rdB - rdA; // Higher RD first
+  });
+
+  const usedIndices = new Set<number>();
+
+  for (let i = 0; i < sorted.length && pairs.length < count; i++) {
+    if (usedIndices.has(i)) continue;
+
+    const trackA = sorted[i];
+    const rdA = trackA.rd ?? DEFAULT_RD;
+
+    // 50% chance: match similar RD, 50% chance: match different RD for calibration
+    const matchSimilar = Math.random() < 0.5;
+
+    let bestJ = -1;
+    let bestDiff = Infinity;
+
+    for (let j = i + 1; j < sorted.length; j++) {
+      if (usedIndices.has(j)) continue;
+
+      const trackB = sorted[j];
+      const rdB = trackB.rd ?? DEFAULT_RD;
+      const diff = Math.abs(rdA - rdB);
+
+      if (matchSimilar) {
+        // Find track with most similar RD
+        if (diff < bestDiff) {
+          bestDiff = diff;
+          bestJ = j;
+        }
+      } else {
+        // Find track with different RD (for calibration)
+        if (diff > 100 && diff < bestDiff) {
+          bestDiff = diff;
+          bestJ = j;
+        }
+      }
+    }
+
+    if (bestJ !== -1) {
+      const trackB = sorted[bestJ];
+      pairs.push({
+        trackA: {
+          id: trackA.id,
+          title: trackA.title,
+          artist: trackA.artist,
+          album: trackA.album,
+          score: trackA.score,
+          rd: trackA.rd,
+          volatility: trackA.volatility,
+        },
+        trackB: {
+          id: trackB.id,
+          title: trackB.title,
+          artist: trackB.artist,
+          album: trackB.album,
+          score: trackB.score,
+          rd: trackB.rd,
+          volatility: trackB.volatility,
+        },
+      });
+
+      usedIndices.add(i);
+      usedIndices.add(bestJ);
+    }
+  }
+
+  // Fill remaining with random pairs
   if (pairs.length < count) {
     const remaining = sorted.filter((_, idx) => !usedIndices.has(idx));
     const randomPairs = selectRandomPairs(remaining, count - pairs.length);
@@ -271,6 +432,12 @@ export function getPairs(db: Db, req: Request): Response {
           request.count,
           request.uncertaintyWindow,
         );
+        break;
+      case "high_uncertainty":
+        pairs = selectHighUncertaintyPairs(tracks, request.count);
+        break;
+      case "mixed_uncertainty":
+        pairs = selectMixedUncertaintyPairs(tracks, request.count);
         break;
       case "random":
       default:

@@ -2,66 +2,89 @@ import { eq, and } from "drizzle-orm";
 
 import type { Db } from "./index";
 import { itemAttributes } from "./schema";
-import { DEFAULT_RATING } from "../utils/elo";
+import {
+  DEFAULT_RATING,
+  DEFAULT_RD,
+  DEFAULT_VOLATILITY,
+  type GlickoRating,
+} from "../utils/glicko2";
 
 /**
- * Get the current score for a track
- * Returns DEFAULT_RATING if no score exists
+ * Get the current Glicko-2 rating for a track
+ * Returns default values if no rating exists
  */
-export function getTrackScore(db: Db, trackId: number): number {
-  const result = db
-    .select({ value: itemAttributes.value })
+export function getTrackRating(db: Db, trackId: number): GlickoRating {
+  const results = db
+    .select({ key: itemAttributes.key, value: itemAttributes.value })
     .from(itemAttributes)
-    .where(
-      and(
-        eq(itemAttributes.entity_id, trackId),
-        eq(itemAttributes.key, "score"),
-      ),
-    )
-    .get();
+    .where(eq(itemAttributes.entity_id, trackId))
+    .all();
 
-  if (!result?.value) {
-    return DEFAULT_RATING;
+  const attributes: Record<string, string> = {};
+  for (const row of results) {
+    attributes[row.key] = row.value || "";
   }
 
-  const score = parseFloat(result.value);
-  return isNaN(score) ? DEFAULT_RATING : score;
+  const rating = parseFloat(attributes["rating"] || attributes["score"] || "");
+  const rd = parseFloat(attributes["rd"] || "");
+  const volatility = parseFloat(attributes["volatility"] || "");
+
+  return {
+    rating: isNaN(rating) ? DEFAULT_RATING : rating,
+    rd: isNaN(rd) ? DEFAULT_RD : rd,
+    volatility: isNaN(volatility) ? DEFAULT_VOLATILITY : volatility,
+  };
 }
 
 /**
- * Update or insert a track's score
+ * Get the current score for a track (backwards compatibility)
+ * Returns DEFAULT_RATING if no score exists
+ */
+export function getTrackScore(db: Db, trackId: number): number {
+  return getTrackRating(db, trackId).rating;
+}
+
+/**
+ * Update or insert a track's Glicko-2 rating
  * Also updates the last_rated_at timestamp
  */
-export function setTrackScore(db: Db, trackId: number, score: number): void {
-  const existing = db
-    .select({ id: itemAttributes.id })
-    .from(itemAttributes)
-    .where(
-      and(
-        eq(itemAttributes.entity_id, trackId),
-        eq(itemAttributes.key, "score"),
-      ),
-    )
-    .get();
+export function setTrackRating(db: Db, trackId: number, rating: GlickoRating): void {
+  // Helper to update or insert a single attribute
+  const upsertAttribute = (key: string, value: string) => {
+    const existing = db
+      .select({ id: itemAttributes.id })
+      .from(itemAttributes)
+      .where(
+        and(
+          eq(itemAttributes.entity_id, trackId),
+          eq(itemAttributes.key, key),
+        ),
+      )
+      .get();
 
-  const scoreStr = score.toFixed(2);
+    if (existing) {
+      db.update(itemAttributes)
+        .set({ value })
+        .where(eq(itemAttributes.id, existing.id))
+        .run();
+    } else {
+      db.insert(itemAttributes)
+        .values({
+          entity_id: trackId,
+          key,
+          value,
+        })
+        .run();
+    }
+  };
 
-  if (existing) {
-    // Update existing score
-    db.update(itemAttributes)
-      .set({ value: scoreStr })
-      .where(eq(itemAttributes.id, existing.id))
-      .run();
-  } else {
-    // Insert new score
-    db.insert(itemAttributes)
-      .values({
-        entity_id: trackId,
-        key: "score",
-        value: scoreStr,
-      })
-      .run();
-  }
+  // Store all three components of the Glicko-2 rating
+  upsertAttribute("rating", rating.rating.toFixed(2));
+  upsertAttribute("rd", rating.rd.toFixed(2));
+  upsertAttribute("volatility", rating.volatility.toFixed(6));
+
+  // Keep "score" key for backwards compatibility
+  upsertAttribute("score", rating.rating.toFixed(2));
 
   // Update the last rated timestamp
   const currentTimestamp = Math.floor(Date.now() / 1000);
@@ -69,12 +92,24 @@ export function setTrackScore(db: Db, trackId: number, score: number): void {
 }
 
 /**
- * Get scores for multiple tracks at once
+ * Update or insert a track's score (backwards compatibility)
+ * Also updates the last_rated_at timestamp
  */
-export function getTrackScores(
+export function setTrackScore(db: Db, trackId: number, score: number): void {
+  const currentRating = getTrackRating(db, trackId);
+  setTrackRating(db, trackId, {
+    ...currentRating,
+    rating: score,
+  });
+}
+
+/**
+ * Get Glicko-2 ratings for multiple tracks at once
+ */
+export function getTrackRatings(
   db: Db,
   trackIds: number[],
-): Record<number, number> {
+): Record<number, GlickoRating> {
   if (trackIds.length === 0) {
     return {};
   }
@@ -82,29 +117,54 @@ export function getTrackScores(
   const results = db
     .select({
       entityId: itemAttributes.entity_id,
+      key: itemAttributes.key,
       value: itemAttributes.value,
     })
     .from(itemAttributes)
-    .where(eq(itemAttributes.key, "score"))
     .all();
 
-  const scores: Record<number, number> = {};
-
-  // Initialize all tracks with default rating
+  // Group by track ID
+  const trackData: Record<number, Record<string, string>> = {};
   for (const trackId of trackIds) {
-    scores[trackId] = DEFAULT_RATING;
+    trackData[trackId] = {};
   }
 
-  // Update with actual scores
   for (const result of results) {
     if (result.entityId && trackIds.includes(result.entityId)) {
-      const score = parseFloat(result.value || "");
-      if (!isNaN(score)) {
-        scores[result.entityId] = score;
-      }
+      trackData[result.entityId][result.key] = result.value || "";
     }
   }
 
+  // Convert to GlickoRating objects
+  const ratings: Record<number, GlickoRating> = {};
+  for (const trackId of trackIds) {
+    const data = trackData[trackId];
+    const rating = parseFloat(data["rating"] || data["score"] || "");
+    const rd = parseFloat(data["rd"] || "");
+    const volatility = parseFloat(data["volatility"] || "");
+
+    ratings[trackId] = {
+      rating: isNaN(rating) ? DEFAULT_RATING : rating,
+      rd: isNaN(rd) ? DEFAULT_RD : rd,
+      volatility: isNaN(volatility) ? DEFAULT_VOLATILITY : volatility,
+    };
+  }
+
+  return ratings;
+}
+
+/**
+ * Get scores for multiple tracks at once (backwards compatibility)
+ */
+export function getTrackScores(
+  db: Db,
+  trackIds: number[],
+): Record<number, number> {
+  const ratings = getTrackRatings(db, trackIds);
+  const scores: Record<number, number> = {};
+  for (const [trackId, rating] of Object.entries(ratings)) {
+    scores[Number(trackId)] = rating.rating;
+  }
   return scores;
 }
 

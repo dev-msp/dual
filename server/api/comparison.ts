@@ -1,25 +1,27 @@
 import { z } from "zod/v4";
 
 import type { Db } from "../db";
-import { getTrackScores, setTrackScore } from "../db/score_queries";
+import { getTrackRatings, setTrackRating } from "../db/score_queries";
 import {
-  calculateEloUpdate,
+  calculateGlicko2Update,
+  conservativeRating,
+  getConfidenceLevel,
   type ComparisonResult,
-  DEFAULT_K_FACTOR,
-} from "../utils/elo";
+} from "../utils/glicko2";
 
 const comparisonSubmissionSchema = z.object({
   trackAId: z.number().positive(),
   trackBId: z.number().positive(),
   result: z.enum(["win", "loss", "draw"]),
-  kFactor: z.number().positive().optional().default(DEFAULT_K_FACTOR),
+  // kFactor is no longer used in Glicko-2, but keep for backwards compatibility
+  kFactor: z.number().positive().optional(),
 });
 
 export type ComparisonSubmission = z.infer<typeof comparisonSubmissionSchema>;
 
 /**
  * Handle a comparison submission request
- * Calculates new ELO ratings and updates the database
+ * Calculates new Glicko-2 ratings and updates the database
  */
 export async function submitComparison(
   db: Db,
@@ -30,42 +32,47 @@ export async function submitComparison(
     const body = await req.json();
     const submission = comparisonSubmissionSchema.parse(body);
 
-    const { trackAId, trackBId, result, kFactor } = submission;
+    const { trackAId, trackBId, result } = submission;
 
-    // Fetch current scores
-    const scores = getTrackScores(db, [trackAId, trackBId]);
-    const currentRatingA = scores[trackAId];
-    const currentRatingB = scores[trackBId];
+    // Fetch current Glicko-2 ratings
+    const ratings = getTrackRatings(db, [trackAId, trackBId]);
+    const currentRatingA = ratings[trackAId];
+    const currentRatingB = ratings[trackBId];
 
-    // Calculate new ratings
-    const update = calculateEloUpdate(
-      {
-        trackA: currentRatingA,
-        trackB: currentRatingB,
-      },
+    // Calculate new ratings using Glicko-2
+    const update = calculateGlicko2Update(
+      currentRatingA,
+      currentRatingB,
       result as ComparisonResult,
-      kFactor,
     );
 
-    // Update scores in database
-    setTrackScore(db, trackAId, update.newRatingA);
-    setTrackScore(db, trackBId, update.newRatingB);
+    // Update ratings in database
+    setTrackRating(db, trackAId, update.newRatingA);
+    setTrackRating(db, trackBId, update.newRatingB);
 
-    // Return the update details
+    // Return the update details with Glicko-2 information
     return new Response(
       JSON.stringify({
         success: true,
         trackA: {
           id: trackAId,
-          oldRating: currentRatingA,
-          newRating: update.newRatingA,
+          oldRating: currentRatingA.rating,
+          newRating: update.newRatingA.rating,
           change: update.changeA,
+          rd: update.newRatingA.rd,
+          volatility: update.newRatingA.volatility,
+          conservativeRating: conservativeRating(update.newRatingA),
+          confidence: getConfidenceLevel(update.newRatingA),
         },
         trackB: {
           id: trackBId,
-          oldRating: currentRatingB,
-          newRating: update.newRatingB,
+          oldRating: currentRatingB.rating,
+          newRating: update.newRatingB.rating,
           change: update.changeB,
+          rd: update.newRatingB.rd,
+          volatility: update.newRatingB.volatility,
+          conservativeRating: conservativeRating(update.newRatingB),
+          confidence: getConfidenceLevel(update.newRatingB),
         },
       }),
       {

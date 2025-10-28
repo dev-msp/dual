@@ -5,6 +5,10 @@ export interface ScoreUpdateInfo {
   oldRating: number;
   newRating: number;
   change: number;
+  rd: number;
+  volatility: number;
+  conservativeRating: number;
+  confidence: number;
 }
 
 export interface ScoreDisplayProps {
@@ -66,6 +70,18 @@ export const ScoreDisplay = (props: ScoreDisplayProps) => {
     return `${sign}${change.toFixed(0)}`;
   };
 
+  const getConfidenceStars = (confidence: number) => {
+    // Map confidence (0-1) to stars (1-5)
+    const stars = Math.max(1, Math.min(5, Math.round(confidence * 5)));
+    return "★".repeat(stars) + "☆".repeat(5 - stars);
+  };
+
+  const getConfidenceClass = (confidence: number) => {
+    if (confidence >= 0.8) return "score-display__confidence--high";
+    if (confidence >= 0.5) return "score-display__confidence--medium";
+    return "score-display__confidence--low";
+  };
+
   return (
     <Show when={isVisible()}>
       <div class="score-display" role="status" aria-live="assertive">
@@ -101,6 +117,15 @@ export const ScoreDisplay = (props: ScoreDisplayProps) => {
                       {trackA().newRating.toFixed(0)}
                     </span>
                   </div>
+
+                  <div class="score-display__details">
+                    <div class="score-display__conservative">
+                      Conservative: {trackA().conservativeRating.toFixed(0)}
+                    </div>
+                    <div class={`score-display__confidence ${getConfidenceClass(trackA().confidence)}`}>
+                      {getConfidenceStars(trackA().confidence)}
+                    </div>
+                  </div>
                 </div>
               )}
             </Show>
@@ -128,6 +153,15 @@ export const ScoreDisplay = (props: ScoreDisplayProps) => {
                     <span class="score-display__new-score">
                       {trackB().newRating.toFixed(0)}
                     </span>
+                  </div>
+
+                  <div class="score-display__details">
+                    <div class="score-display__conservative">
+                      Conservative: {trackB().conservativeRating.toFixed(0)}
+                    </div>
+                    <div class={`score-display__confidence ${getConfidenceClass(trackB().confidence)}`}>
+                      {getConfidenceStars(trackB().confidence)}
+                    </div>
                   </div>
                 </div>
               )}

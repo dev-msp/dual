@@ -218,6 +218,45 @@
   }
 }
 
+// Details section (conservative rating + confidence)
+.score-display__details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border-color);
+  animation: fadeIn var(--transition-slow) 300ms ease-out backwards;
+}
+
+// Conservative rating display
+.score-display__conservative {
+  font-size: var(--font-size-sm);
+  color: var(--theme-fg-muted);
+  text-align: center;
+  font-family: "Monaco", "Courier New", monospace;
+}
+
+// Confidence indicator
+.score-display__confidence {
+  font-size: var(--font-size-lg);
+  text-align: center;
+  letter-spacing: 0.05em;
+  transition: color var(--transition-fast);
+
+  &.score-display__confidence--high {
+    color: #22c55e; // Green for high confidence
+  }
+
+  &.score-display__confidence--medium {
+    color: #f59e0b; // Orange for medium confidence
+  }
+
+  &.score-display__confidence--low {
+    color: #ef4444; // Red for low confidence
+  }
+}
+
 // Footer hint
 .score-display__footer {
   text-align: center;

@@ -53,12 +53,20 @@ interface ComparisonResponse {
     oldRating: number;
     newRating: number;
     change: number;
+    rd: number;
+    volatility: number;
+    conservativeRating: number;
+    confidence: number;
   };
   trackB?: {
     id: number;
     oldRating: number;
     newRating: number;
     change: number;
+    rd: number;
+    volatility: number;
+    conservativeRating: number;
+    confidence: number;
   };
 }
 
@@ -71,6 +79,10 @@ const comparisonResponseSchema = z.object({
       oldRating: z.number(),
       newRating: z.number(),
       change: z.number(),
+      rd: z.number(),
+      volatility: z.number(),
+      conservativeRating: z.number(),
+      confidence: z.number(),
     })
     .optional(),
   trackB: z
@@ -79,6 +91,10 @@ const comparisonResponseSchema = z.object({
       oldRating: z.number(),
       newRating: z.number(),
       change: z.number(),
+      rd: z.number(),
+      volatility: z.number(),
+      conservativeRating: z.number(),
+      confidence: z.number(),
     })
     .optional(),
 });
@@ -242,12 +258,20 @@ export const Review = () => {
           oldRating: data.trackA.oldRating,
           newRating: data.trackA.newRating,
           change: data.trackA.change,
+          rd: data.trackA.rd,
+          volatility: data.trackA.volatility,
+          conservativeRating: data.trackA.conservativeRating,
+          confidence: data.trackA.confidence,
         });
         setScoreUpdateB({
           side: "B",
           oldRating: data.trackB.oldRating,
           newRating: data.trackB.newRating,
           change: data.trackB.change,
+          rd: data.trackB.rd,
+          volatility: data.trackB.volatility,
+          conservativeRating: data.trackB.conservativeRating,
+          confidence: data.trackB.confidence,
         });
         setIsShowingScores(true);
       } else if (!data.success) {
