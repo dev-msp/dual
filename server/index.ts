@@ -28,6 +28,35 @@ const trackPathById = (db: Db, trackId: number): string | undefined => {
   return track?.path ? new TextDecoder("utf-8").decode(track?.path) : undefined;
 };
 
+interface RangeRequest {
+  start: number;
+  end: number;
+}
+
+const parseRangeHeader = (rangeHeader: string, fileSize: number): RangeRequest | null => {
+  // Format: "bytes=0-1023" or "bytes=1024-" or "bytes=-1024"
+  const match = rangeHeader.match(/^bytes=(\d*)-(\d*)$/);
+  if (!match) return null;
+
+  const [, startStr, endStr] = match;
+  let start = startStr ? parseInt(startStr, 10) : 0;
+  let end = endStr ? parseInt(endStr, 10) : fileSize - 1;
+
+  // Suffix range: last N bytes (bytes=-1024)
+  if (!startStr && endStr) {
+    const suffixLength = parseInt(endStr, 10);
+    start = Math.max(0, fileSize - suffixLength);
+    end = fileSize - 1;
+  }
+
+  // Validation: invalid ranges
+  if (isNaN(start) || isNaN(end) || start > end || start < 0 || end >= fileSize) {
+    return null;
+  }
+
+  return { start, end };
+};
+
 const serveTrack = async (
   db: Db,
   req: Bun.BunRequest<"/api/tracks/:trackId/play">,
@@ -54,17 +83,46 @@ const serveTrack = async (
     }
 
     const size = file.size;
-    const headers = new Headers({
+    const rangeHeader = req.headers.get("Range");
+    const commonHeaders = {
       "Content-Type": "audio/mpeg",
-      "Content-Length": size.toString(),
       "Accept-Ranges": "bytes",
       "Cache-Control": "public, max-age=31536000",
+    };
+
+    // No Range header: serve full file with 200 OK
+    if (!rangeHeader) {
+      const headers = new Headers({
+        ...commonHeaders,
+        "Content-Length": size.toString(),
+      });
+      return new Response(file, { status: 200, headers });
+    }
+
+    // Parse Range header
+    const range = parseRangeHeader(rangeHeader, size);
+    if (!range) {
+      // Invalid range: respond with 416 Range Not Satisfiable
+      const headers = new Headers({
+        ...commonHeaders,
+        "Content-Range": `bytes */${size}`,
+      });
+      return new Response("Range Not Satisfiable", {
+        status: 416,
+        headers,
+      });
+    }
+
+    // Serve partial content with 206 Partial Content
+    const length = range.end - range.start + 1;
+    const slice = file.slice(range.start, range.end + 1);
+    const headers = new Headers({
+      ...commonHeaders,
+      "Content-Length": length.toString(),
+      "Content-Range": `bytes ${range.start}-${range.end}/${size}`,
     });
 
-    return new Response(file, {
-      status: 200,
-      headers,
-    });
+    return new Response(slice, { status: 206, headers });
   } catch (error) {
     console.error("Error serving track:", error);
     return new Response("Internal Server Error", { status: 500 });
