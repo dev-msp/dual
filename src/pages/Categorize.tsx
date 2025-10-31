@@ -18,6 +18,7 @@ import {
   recordCategorization,
   setAlbumMode,
   setAlbumTrackCount,
+  setStats,
   trackSubset,
 } from "../stores/categorizeStore";
 
@@ -38,6 +39,12 @@ const bucketValuesResponseSchema = z.object({
   success: z.boolean(),
   bucket: z.string(),
   values: z.array(z.string()),
+  error: z.string().optional(),
+});
+
+const uncategorizedCountResponseSchema = z.object({
+  success: z.boolean(),
+  count: z.number().optional(),
   error: z.string().optional(),
 });
 
@@ -71,6 +78,20 @@ export const Categorize = () => {
     setLoading(true);
 
     try {
+      // Fetch uncategorized count for the active buckets
+      const bucketsParam = categorizeStore.activeBuckets.join(",");
+      const countResponse = await fetch(
+        `/api/categorize/count?buckets=${encodeURIComponent(bucketsParam)}`,
+      );
+      const countData: unknown = await countResponse.json();
+      const countParsed = uncategorizedCountResponseSchema.parse(countData);
+      if (countParsed.success && countParsed.count !== undefined) {
+        setStats({
+          categorized: 0,
+          remaining: countParsed.count,
+        });
+      }
+
       // Fetch values for each active bucket
       for (const bucket of categorizeStore.activeBuckets) {
         const response = await fetch(

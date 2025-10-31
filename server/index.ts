@@ -13,6 +13,7 @@ import {
   submitCategorization,
   getAlbumTrackCount,
   submitAlbumCategorization,
+  getUncategorizedCount,
 } from "./api/categorize";
 import { submitComparison } from "./api/comparison";
 import { getPairs } from "./api/pairs";
@@ -225,6 +226,7 @@ Bun.serve({
     "/api/buckets": (_req) => getBuckets(db),
     "/api/buckets/values": (req) => getBucketValues(db, req),
     "/api/categorize/next": (req) => getNextTrack(db, req),
+    "/api/categorize/count": (req) => getUncategorizedCount(db, req),
     "/api/categorize": (req) => submitCategorization(db, req),
     "/api/categorize/album": (req) => submitAlbumCategorization(db, req),
     "/api/albums/track-count": (req) => getAlbumTrackCount(db, req),

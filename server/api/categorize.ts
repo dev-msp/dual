@@ -1,4 +1,4 @@
-import { eq, and, like, or } from "drizzle-orm";
+import { eq, and, like, or, notInArray, sql } from "drizzle-orm";
 import { z } from "zod/v4";
 
 import type { Db } from "../db";
@@ -122,6 +122,94 @@ const categorizationSchema = z.object({
 });
 
 /**
+ * Get count of uncategorized tracks for specified buckets
+ */
+export function getUncategorizedCount(db: Db, req: Request): Response {
+  try {
+    const url = new URL(req.url);
+    const bucketsParam = url.searchParams.get("buckets");
+
+    if (!bucketsParam) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "buckets parameter is required (comma-separated)",
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const bucketNames = bucketsParam.split(",").map((b) => b.trim());
+    const request = categorizationSchema.parse({ buckets: bucketNames });
+
+    const bucketKeys = request.buckets.map((b) => `bkt:${b}`);
+
+    // Get all track IDs that have at least one of the bucket attributes
+    const conditions = bucketKeys.map((key) => eq(itemAttributes.key, key));
+
+    const tracksWithAttributes = db
+      .selectDistinct({ id: itemAttributes.entity_id })
+      .from(itemAttributes)
+      .where(or(...conditions))
+      .all();
+
+    const tracksWithAttributeIds = new Set(
+      tracksWithAttributes.map((t) => t.id).filter((id) => id !== null),
+    );
+
+    // Query tracks from scored items (includes score data)
+    const subquery = db.$with("items_with_score").as(itemsWithScore);
+    const uncategorizedTracks = db
+      .with(subquery)
+      .select({ id: scoredItems.id })
+      .from(scoredItems)
+      .where(notInArray(scoredItems.id, Array.from(tracksWithAttributeIds)))
+      .all();
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        count: uncategorizedTracks.length,
+      }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  } catch (error) {
+    console.error("Error getting uncategorized count:", error);
+
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Invalid request parameters",
+          details: error.issues,
+        }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: "Internal server error",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
+}
+
+/**
  * Get next track missing all specified buckets
  */
 export function getNextTrack(db: Db, req: Request): Response {
@@ -177,9 +265,7 @@ export function getNextTrack(db: Db, req: Request): Response {
       .all();
 
     // Find first track missing ALL buckets
-    const nextTrack = allTracks.find(
-      (track) => !tracksWithAttributeIds.has(track.id),
-    );
+    const nextTrack = allTracks[0];
 
     if (!nextTrack) {
       return new Response(
@@ -359,14 +445,16 @@ export async function submitCategorization(
   }
 }
 
-const submitAlbumCategorizationSchema = z.object({
-  albumId: z.number().positive().optional(),
-  albumHash: z.string().optional(),
-  categories: z.record(z.string(), z.string()),
-}).refine(
-  (data) => data.albumId !== undefined || data.albumHash !== undefined,
-  { message: "Either albumId or albumHash must be provided" }
-);
+const submitAlbumCategorizationSchema = z
+  .object({
+    albumId: z.number().positive().optional(),
+    albumHash: z.string().optional(),
+    categories: z.record(z.string(), z.string()),
+  })
+  .refine(
+    (data) => data.albumId !== undefined || data.albumHash !== undefined,
+    { message: "Either albumId or albumHash must be provided" },
+  );
 
 /**
  * Resolve either albumId or albumHash to the numeric album ID
