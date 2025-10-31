@@ -3,14 +3,21 @@ import { z } from "zod/v4";
 
 import type { Db } from "../db";
 import { scoredItems, itemsWithScore } from "../db/query";
-import { DEFAULT_RATING, DEFAULT_RD, DEFAULT_VOLATILITY } from "../utils/glicko2";
+import { DEFAULT_RATING, DEFAULT_RD } from "../utils/glicko2";
 
 import type { Ordering } from "./index";
 
 const pairSelectionSchema = z.object({
   // Selection strategy
   strategy: z
-    .enum(["random", "uncertain", "similar_scores", "high_uncertainty", "mixed_uncertainty"])
+    .enum([
+      "random",
+      "uncertain",
+      "similar_scores",
+      "high_uncertainty",
+      "mixed_uncertainty",
+      "high_score_rest",
+    ])
     .optional()
     .default("random"),
 
@@ -24,6 +31,11 @@ const pairSelectionSchema = z.object({
   // For uncertain/similar_scores strategies
   uncertaintyWindow: z.number().positive().optional().default(200),
 });
+
+// High-Score Rest strategy parameters
+const HIGH_SCORE_THRESHOLD = 1500;
+const SETTLED_RD_THRESHOLD = 200;
+const DECAY_CONSTANT = 8;
 
 export type PairSelectionRequest = z.infer<typeof pairSelectionSchema>;
 
@@ -72,6 +84,7 @@ type Track = {
   score: number | null;
   rd: number | null;
   volatility: number | null;
+  settled_at: number | null;
 };
 
 /**
@@ -93,6 +106,7 @@ function getTrackPool(
       score: scoredItems.score,
       rd: scoredItems.rd,
       volatility: scoredItems.volatility,
+      settled_at: scoredItems.settled_at,
     })
     .from(scoredItems);
 
@@ -228,7 +242,10 @@ function selectUncertainPairs(
  * Select pairs prioritizing tracks with high RD (high uncertainty)
  * Pairs tracks with similar RD values
  */
-function selectHighUncertaintyPairs(tracks: Track[], count: number): TrackPair[] {
+function selectHighUncertaintyPairs(
+  tracks: Track[],
+  count: number,
+): TrackPair[] {
   const pairs: TrackPair[] = [];
 
   // Sort by RD (descending) to prioritize uncertain tracks
@@ -297,7 +314,10 @@ function selectHighUncertaintyPairs(tracks: Track[], count: number): TrackPair[]
  * Mixed uncertainty strategy: sometimes match similar uncertainties,
  * sometimes match high-RD with low-RD tracks for calibration
  */
-function selectMixedUncertaintyPairs(tracks: Track[], count: number): TrackPair[] {
+function selectMixedUncertaintyPairs(
+  tracks: Track[],
+  count: number,
+): TrackPair[] {
   const pairs: TrackPair[] = [];
 
   // Sort by RD
@@ -382,6 +402,60 @@ function selectMixedUncertaintyPairs(tracks: Track[], count: number): TrackPair[
 }
 
 /**
+ * High-Score Rest strategy: interrogate high-scoring tracks while uncertain,
+ * exclude settled ones with decay window. Returns empty if not enough uncertain high-score tracks.
+ */
+function selectHighScoreRestPairs(
+  tracks: Track[],
+  count: number,
+  minExclusionDays: number = 7,
+): TrackPair[] {
+  // Filter to high-score pool
+  const highScoreTracks = tracks.filter(
+    (t) => (t.score ?? DEFAULT_RATING) >= HIGH_SCORE_THRESHOLD,
+  );
+
+  if (highScoreTracks.length < 2) {
+    // Not enough high-score tracks to form pairs
+    return [];
+  }
+
+  const now = Math.floor(Date.now() / 1000); // Unix timestamp in seconds
+
+  // Split into uncertain (eligible) and settled (excluded based on decay)
+  const uncertainTracks = highScoreTracks.filter((t) => {
+    const rd = t.rd ?? DEFAULT_RD;
+
+    // Still high-uncertainty: always eligible
+    if (rd >= SETTLED_RD_THRESHOLD) {
+      return true;
+    }
+
+    // Settled: check if decay window has elapsed
+    if (t.settled_at === null || t.settled_at === undefined) {
+      // Never settled: eligible to become settled
+      return true;
+    }
+
+    const daysSinceSettled = (now - t.settled_at) / (60 * 60 * 24);
+    const decayDays =
+      (minExclusionDays * Math.log(daysSinceSettled + 1)) /
+      Math.log(DECAY_CONSTANT);
+
+    // Re-eligible if decay window has passed
+    return daysSinceSettled >= decayDays;
+  });
+
+  if (uncertainTracks.length < 2) {
+    // Not enough uncertain high-score tracks to form pairs
+    return [];
+  }
+
+  // Form pairs from uncertain pool
+  return selectRandomPairs(uncertainTracks, count);
+}
+
+/**
  * Handle pair selection request
  */
 export function getPairs(db: Db, req: Request): Response {
@@ -438,6 +512,9 @@ export function getPairs(db: Db, req: Request): Response {
         break;
       case "mixed_uncertainty":
         pairs = selectMixedUncertaintyPairs(tracks, request.count);
+        break;
+      case "high_score_rest":
+        pairs = selectHighScoreRestPairs(tracks, request.count);
         break;
       case "random":
       default:

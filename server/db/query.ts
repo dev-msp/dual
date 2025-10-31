@@ -47,25 +47,39 @@ const volatilities = (qb: QueryBuilder) =>
       .where(eq(itemAttributes.key, "volatility")),
   );
 
+const settledAts = (qb: QueryBuilder) =>
+  qb.$with("settled_ats").as((qb) =>
+    qb
+      .select({
+        itemId: itemAttributes.entity_id,
+        settled_at: sql<number>`CAST(${itemAttributes.value} AS int)`.as("settled_at"),
+      })
+      .from(itemAttributes)
+      .where(eq(itemAttributes.key, "settled_at")),
+  );
+
 export const itemsWithScore = (db: QueryBuilder) => {
   const _scores = scores(db);
   const _lastRatedAt = lastRatedAt(db);
   const _rds = ratingDeviations(db);
   const _volatilities = volatilities(db);
+  const _settledAts = settledAts(db);
   return db
-    .with(_scores, _lastRatedAt, _rds, _volatilities)
+    .with(_scores, _lastRatedAt, _rds, _volatilities, _settledAts)
     .select({
       ...getTableColumns(items),
       score: _scores.score,
       last_rated_at: _lastRatedAt.last_rated_at,
       rd: _rds.rd,
       volatility: _volatilities.volatility,
+      settled_at: _settledAts.settled_at,
     })
     .from(items)
     .leftJoin(_scores, eq(items.id, _scores.itemId))
     .leftJoin(_lastRatedAt, eq(items.id, _lastRatedAt.itemId))
     .leftJoin(_rds, eq(items.id, _rds.itemId))
-    .leftJoin(_volatilities, eq(items.id, _volatilities.itemId));
+    .leftJoin(_volatilities, eq(items.id, _volatilities.itemId))
+    .leftJoin(_settledAts, eq(items.id, _settledAts.itemId));
 };
 
 export const scoredItems = sqliteView("items_with_score").as(itemsWithScore);

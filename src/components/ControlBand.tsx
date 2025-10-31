@@ -57,6 +57,9 @@ export const ControlBand = (props: ControlBandProps) => {
             <option value="random">Random</option>
             <option value="uncertain">Uncertain</option>
             <option value="similar_scores">Similar Scores</option>
+            <option value="high_uncertainty">High Uncertainty</option>
+            <option value="mixed_uncertainty">Mixed Uncertainty</option>
+            <option value="high_score_rest">High Score Rest</option>
           </select>
         </div>
 
