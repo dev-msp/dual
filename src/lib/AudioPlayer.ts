@@ -29,7 +29,7 @@ export class AudioPlayer {
    * Play a track. If already loading, this request is ignored.
    * If playing a different track, stops current playback and starts the new one.
    */
-  async play(trackId: number): Promise<void> {
+  async play(trackId: number, startTime?: number): Promise<void> {
     // Ignore if already loading this track
     if (this.state.type === "LOADING" && this.state.trackId === trackId) {
       return;
@@ -48,7 +48,11 @@ export class AudioPlayer {
 
     try {
       const buffer = await this.fetchAndDecode(trackId);
-      this.playFromBuffer(buffer, trackId);
+      if (startTime !== undefined && startTime > 0) {
+        this.playFromBufferAt(buffer, trackId, startTime);
+      } else {
+        this.playFromBuffer(buffer, trackId);
+      }
     } catch (err) {
       console.error("Error playing track:", err);
       this.transitionTo({ type: "IDLE" });
@@ -115,6 +119,25 @@ export class AudioPlayer {
    */
   get isPlaying(): boolean {
     return this.state.type === "PLAYING";
+  }
+
+  /**
+   * Get the current playback position in seconds
+   */
+  getCurrentTime(): number {
+    if (this.state.type === "PLAYING") {
+      return this.audioContext.currentTime - this.startTime;
+    } else if (this.state.type === "PAUSED") {
+      return this.pausedTime;
+    }
+    return 0;
+  }
+
+  /**
+   * Get the current track ID
+   */
+  getCurrentTrackId(): number | null {
+    return this.state.trackId ?? null;
   }
 
   /**
@@ -229,6 +252,36 @@ export class AudioPlayer {
     this.startTime = this.audioContext.currentTime;
     this.pausedTime = 0;
     this.currentSource.start(0);
+
+    this.transitionTo({ type: "PLAYING", trackId });
+  }
+
+  /**
+   * Create a new source and play it from a specific position
+   */
+  private playFromBufferAt(
+    buffer: AudioBuffer,
+    trackId: number,
+    offset: number,
+  ): void {
+    this.stopSource();
+
+    this.currentSource = this.audioContext.createBufferSource();
+    this.currentSource.buffer = buffer;
+    this.currentSource.connect(this.audioContext.destination);
+
+    // Set up end-of-track handler
+    this.currentSource.onended = () => {
+      // Only transition if we're still in PLAYING state (might have been stopped)
+      if (this.state.type === "PLAYING") {
+        this.transitionTo({ type: "IDLE" });
+        this.onEnded?.();
+      }
+    };
+
+    this.startTime = this.audioContext.currentTime - offset;
+    this.pausedTime = 0;
+    this.currentSource.start(0, offset);
 
     this.transitionTo({ type: "PLAYING", trackId });
   }

@@ -1,4 +1,5 @@
 import { Show } from "solid-js";
+
 import type { SessionStats, SelectionStrategy } from "../stores/reviewStore";
 
 export interface ControlBandProps {

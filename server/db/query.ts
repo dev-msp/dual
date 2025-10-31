@@ -19,7 +19,9 @@ const lastRatedAt = (qb: QueryBuilder) =>
     qb
       .select({
         itemId: itemAttributes.entity_id,
-        last_rated_at: sql<number>`CAST(${itemAttributes.value} AS int)`.as("last_rated_at"),
+        last_rated_at: sql<number>`CAST(${itemAttributes.value} AS int)`.as(
+          "last_rated_at",
+        ),
       })
       .from(itemAttributes)
       .where(eq(itemAttributes.key, "last_rated_at")),
@@ -41,7 +43,9 @@ const volatilities = (qb: QueryBuilder) =>
     qb
       .select({
         itemId: itemAttributes.entity_id,
-        volatility: sql<number>`CAST(${itemAttributes.value} AS real)`.as("volatility"),
+        volatility: sql<number>`CAST(${itemAttributes.value} AS real)`.as(
+          "volatility",
+        ),
       })
       .from(itemAttributes)
       .where(eq(itemAttributes.key, "volatility")),
@@ -52,7 +56,9 @@ const settledAts = (qb: QueryBuilder) =>
     qb
       .select({
         itemId: itemAttributes.entity_id,
-        settled_at: sql<number>`CAST(${itemAttributes.value} AS int)`.as("settled_at"),
+        settled_at: sql<number>`CAST(${itemAttributes.value} AS int)`.as(
+          "settled_at",
+        ),
       })
       .from(itemAttributes)
       .where(eq(itemAttributes.key, "settled_at")),

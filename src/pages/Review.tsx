@@ -321,6 +321,11 @@ export const Review = () => {
     navigate("/");
   };
 
+  // Handle cycle playback
+  const handleCyclePlayback = () => {
+    audioControls.cyclePlayback();
+  };
+
   // Set up keyboard shortcuts
   useKeyboard({
     onSelectA: handleSelectA,
@@ -328,6 +333,7 @@ export const Review = () => {
     onDraw: handleDraw,
     onSkip: handleSkip,
     onQuit: handleQuit,
+    onCyclePlayback: handleCyclePlayback,
   });
 
   // Fetch initial pair on mount

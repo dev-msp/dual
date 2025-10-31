@@ -6,6 +6,7 @@ export interface KeyboardHandlers {
   onDraw?: () => void;
   onSkip?: () => void;
   onQuit?: () => void;
+  onCyclePlayback?: () => void;
 }
 
 /**
@@ -15,6 +16,7 @@ export interface KeyboardHandlers {
  * d - Mark as draw
  * n - Skip comparison
  * q - Quit/return to home
+ * space - Cycle playback (paused → A → B → paused)
  */
 export function useKeyboard(handlers: KeyboardHandlers) {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -51,6 +53,10 @@ export function useKeyboard(handlers: KeyboardHandlers) {
       case "q":
         e.preventDefault();
         handlers.onQuit?.();
+        break;
+      case " ":
+        e.preventDefault();
+        handlers.onCyclePlayback?.();
         break;
     }
   };
