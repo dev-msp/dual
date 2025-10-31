@@ -20,6 +20,21 @@ import { enqueueTask, taskEventsById, tasks$ } from "./api/task";
 import { TEMP_DIR } from "./api/worker";
 import { db, type Db } from "./db";
 import { items } from "./db/schema";
+import { buildAlbumHashMappings } from "./db/album_queries";
+
+// Global album hash mappings - initialized on startup
+export let albumHashToId: Map<string, number> = new Map();
+export let albumIdToHash: Map<number, string> = new Map();
+
+// Initialize album hash mappings
+const initAlbumMappings = () => {
+  const { hashToId, idToHash } = buildAlbumHashMappings();
+  albumHashToId = hashToId;
+  albumIdToHash = idToHash;
+  console.log(
+    `Initialized album mappings: ${albumHashToId.size} albums indexed`
+  );
+};
 
 tasks$.subscribe({
   next: (task) => console.log(task),
@@ -163,6 +178,9 @@ const latestFileInDir = async (dir: string) => {
 
   return latest;
 };
+
+// Initialize all mappings on startup
+initAlbumMappings();
 
 const serveAlbumArt = async (
   db: Db,

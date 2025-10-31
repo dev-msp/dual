@@ -9,6 +9,7 @@ export const trackSubset = z.object({
   artist: z.string().nullable(),
   album: z.string().nullable(),
   album_id: z.number().nullable().optional(),
+  albumHash: z.string().nullable().optional(),
   artPath: z.string().nullable().optional(),
 });
 

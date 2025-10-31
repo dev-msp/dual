@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 import type { Db } from "../db";
 import { scoredItems, itemsWithScore } from "../db/query";
 import { itemAttributes, items } from "../db/schema";
+import { albumHashToId, albumIdToHash } from "../index";
 
 /**
  * Get all available bucket names (all keys matching bkt:*)
@@ -194,6 +195,12 @@ export function getNextTrack(db: Db, req: Request): Response {
       );
     }
 
+    // Get album hash if track belongs to an album
+    let albumHash: string | null = null;
+    if (nextTrack.album_id) {
+      albumHash = albumIdToHash.get(nextTrack.album_id) ?? null;
+    }
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -202,6 +209,8 @@ export function getNextTrack(db: Db, req: Request): Response {
           title: nextTrack.title,
           artist: nextTrack.artist,
           album: nextTrack.album,
+          album_id: nextTrack.album_id,
+          albumHash,
           artPath: null, // Will be filled by frontend if needed
         },
       }),
@@ -351,9 +360,26 @@ export async function submitCategorization(
 }
 
 const submitAlbumCategorizationSchema = z.object({
-  albumId: z.number().positive(),
+  albumId: z.number().positive().optional(),
+  albumHash: z.string().optional(),
   categories: z.record(z.string(), z.string()),
-});
+}).refine(
+  (data) => data.albumId !== undefined || data.albumHash !== undefined,
+  { message: "Either albumId or albumHash must be provided" }
+);
+
+/**
+ * Resolve either albumId or albumHash to the numeric album ID
+ */
+function resolveAlbumId(albumId?: number, albumHash?: string): number | null {
+  if (albumId) {
+    return albumId;
+  }
+  if (albumHash) {
+    return albumHashToId.get(albumHash) ?? null;
+  }
+  return null;
+}
 
 /**
  * Get all track IDs for a given album
@@ -370,17 +396,19 @@ function getAlbumTrackIds(db: Db, albumId: number): number[] {
 
 /**
  * Get track count for a given album
+ * Accepts either albumId or albumHash query parameter
  */
 export function getAlbumTrackCount(db: Db, req: Request): Response {
   try {
     const url = new URL(req.url);
     const albumIdParam = url.searchParams.get("albumId");
+    const albumHashParam = url.searchParams.get("albumHash");
 
-    if (!albumIdParam) {
+    if (!albumIdParam && !albumHashParam) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "albumId parameter is required",
+          error: "Either albumId or albumHash parameter is required",
         }),
         {
           status: 400,
@@ -389,12 +417,43 @@ export function getAlbumTrackCount(db: Db, req: Request): Response {
       );
     }
 
-    const albumId = parseInt(albumIdParam, 10);
-    if (isNaN(albumId)) {
+    let albumId: number | null = null;
+
+    if (albumIdParam) {
+      albumId = parseInt(albumIdParam, 10);
+      if (isNaN(albumId)) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Invalid albumId",
+          }),
+          {
+            status: 400,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    } else if (albumHashParam) {
+      albumId = albumHashToId.get(albumHashParam) ?? null;
+      if (albumId === null) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Album not found for given hash",
+          }),
+          {
+            status: 404,
+            headers: { "Content-Type": "application/json" },
+          },
+        );
+      }
+    }
+
+    if (albumId === null) {
       return new Response(
         JSON.stringify({
           success: false,
-          error: "Invalid albumId",
+          error: "Could not resolve album ID",
         }),
         {
           status: 400,
@@ -409,10 +468,13 @@ export function getAlbumTrackCount(db: Db, req: Request): Response {
       .where(eq(items.album_id, albumId))
       .all().length;
 
+    const albumHash = albumIdToHash.get(albumId);
+
     return new Response(
       JSON.stringify({
         success: true,
         albumId,
+        albumHash,
         count,
       }),
       {
@@ -437,6 +499,7 @@ export function getAlbumTrackCount(db: Db, req: Request): Response {
 
 /**
  * Submit categorization for all tracks in an album (upsert multiple bucket values for all album tracks)
+ * Accepts either albumId or albumHash in request body
  */
 export async function submitAlbumCategorization(
   db: Db,
@@ -468,8 +531,23 @@ export async function submitAlbumCategorization(
 
     const request = submitAlbumCategorizationSchema.parse(body);
 
+    // Resolve album ID from either albumId or albumHash
+    const albumId = resolveAlbumId(request.albumId, request.albumHash);
+    if (albumId === null) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Album not found",
+        }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     // Get all track IDs for this album
-    const trackIds = getAlbumTrackIds(db, request.albumId);
+    const trackIds = getAlbumTrackIds(db, albumId);
 
     if (trackIds.length === 0) {
       return new Response(

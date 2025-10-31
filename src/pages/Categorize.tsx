@@ -94,11 +94,13 @@ export const Categorize = () => {
     }
   };
 
-  const fetchAlbumTrackCount = async (albumId: number) => {
+  const fetchAlbumTrackCount = async (albumId: number, albumHash?: string) => {
     try {
-      const response = await fetch(
-        `/api/albums/track-count?albumId=${encodeURIComponent(albumId)}`,
-      );
+      // Prefer albumHash if available for better consistency
+      const queryParam = albumHash
+        ? `albumHash=${encodeURIComponent(albumHash)}`
+        : `albumId=${encodeURIComponent(albumId)}`;
+      const response = await fetch(`/api/albums/track-count?${queryParam}`);
       const data: unknown = await response.json();
       if (
         data &&
@@ -128,9 +130,9 @@ export const Categorize = () => {
         if (parsed.track) {
           setCurrentTrack(parsed.track);
           setError(null);
-          // Fetch album track count if track has an album_id
+          // Fetch album track count if track has an album_id or albumHash
           if (parsed.track.album_id) {
-            await fetchAlbumTrackCount(parsed.track.album_id);
+            await fetchAlbumTrackCount(parsed.track.album_id, parsed.track.albumHash);
           } else {
             setAlbumTrackCount(null);
           }
@@ -170,6 +172,7 @@ export const Categorize = () => {
       const payload = isAlbumMode
         ? {
             albumId: track.album_id,
+            albumHash: track.albumHash,
             categories: Object.fromEntries(
               categorizeStore.activeBuckets.map((bucket) => [
                 bucket,
