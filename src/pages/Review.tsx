@@ -4,6 +4,7 @@ import * as op from "rxjs/operators";
 import { createEffect, Show, onCleanup, createSignal } from "solid-js";
 import z from "zod";
 
+import { AudioProgress } from "../components/AudioProgress";
 import { ComparisonCard } from "../components/ComparisonCard";
 import { ControlBand } from "../components/ControlBand";
 import { ScoreDisplay, type ScoreUpdateInfo } from "../components/ScoreDisplay";
@@ -326,6 +327,15 @@ export const Review = () => {
     audioControls.cyclePlayback();
   };
 
+  // Handle seek forward/backward
+  const handleSeekForward = () => {
+    audioControls.seekForward(10);
+  };
+
+  const handleSeekBackward = () => {
+    audioControls.seekBackward(10);
+  };
+
   // Set up keyboard shortcuts
   useKeyboard({
     onSelectA: handleSelectA,
@@ -334,6 +344,8 @@ export const Review = () => {
     onSkip: handleSkip,
     onQuit: handleQuit,
     onCyclePlayback: handleCyclePlayback,
+    onSeekForward: handleSeekForward,
+    onSeekBackward: handleSeekBackward,
   });
 
   // Fetch initial pair on mount
@@ -410,6 +422,12 @@ export const Review = () => {
               />
             </div>
           </div>
+
+          {/* Audio Progress */}
+          <AudioProgress
+            currentTime={audioState.currentTime}
+            duration={audioState.duration}
+          />
 
           {/* Control Band */}
           <ControlBand

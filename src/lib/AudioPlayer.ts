@@ -141,6 +141,54 @@ export class AudioPlayer {
   }
 
   /**
+   * Get the duration of the current track in seconds
+   */
+  getDuration(): number | null {
+    if (!this.state.trackId) return null;
+    const buffer = this.bufferCache.get(this.state.trackId);
+    return buffer ? buffer.duration : null;
+  }
+
+  /**
+   * Seek to a specific time in the current track
+   */
+  seek(time: number): void {
+    if (!this.state.trackId || this.state.type === "IDLE" || this.state.type === "LOADING") {
+      return;
+    }
+
+    const buffer = this.bufferCache.get(this.state.trackId);
+    if (!buffer) return;
+
+    // Clamp time to valid range
+    const clampedTime = Math.max(0, Math.min(time, buffer.duration));
+
+    if (this.state.type === "PLAYING") {
+      // If playing, restart playback from the new position
+      this.playFromBufferAt(buffer, this.state.trackId, clampedTime);
+    } else if (this.state.type === "PAUSED") {
+      // If paused, just update the paused position
+      this.pausedTime = clampedTime;
+    }
+  }
+
+  /**
+   * Seek forward by a number of seconds
+   */
+  seekForward(seconds: number): void {
+    const currentTime = this.getCurrentTime();
+    this.seek(currentTime + seconds);
+  }
+
+  /**
+   * Seek backward by a number of seconds
+   */
+  seekBackward(seconds: number): void {
+    const currentTime = this.getCurrentTime();
+    this.seek(currentTime - seconds);
+  }
+
+  /**
    * Register callback for playback state changes
    */
   setOnPlayingChanged(callback: (isPlaying: boolean) => void): void {

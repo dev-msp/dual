@@ -6,6 +6,8 @@ import type { TrackSubset } from "../stores/reviewStore";
 export interface ReviewAudioState {
   currentTrack: "A" | "B" | null;
   isPlaying: boolean;
+  currentTime: number;
+  duration: number | null;
 }
 
 export interface ReviewAudioControls {
@@ -15,6 +17,8 @@ export interface ReviewAudioControls {
   toggle: () => void;
   stop: () => void;
   cyclePlayback: () => void;
+  seekForward: (seconds: number) => void;
+  seekBackward: (seconds: number) => void;
 }
 
 export function useReviewAudio(
@@ -33,11 +37,45 @@ export function useReviewAudio(
   // Track cycle state: 0=paused, 1=playing A, 2=playing B
   const [cycleState, setCycleState] = createSignal(0);
 
+  // Track current time and duration for display
+  const [currentTime, setCurrentTime] = createSignal(0);
+  const [duration, setDuration] = createSignal<number | null>(null);
+
   // Create single player instance
   const player = new AudioPlayer();
 
   // Wire up player callbacks to SolidJS signals
   player.setOnPlayingChanged(setIsPlaying);
+
+  // Update current time and duration periodically
+  let updateInterval: number | undefined;
+
+  const startTimeUpdates = () => {
+    if (updateInterval) return;
+    updateInterval = window.setInterval(() => {
+      setCurrentTime(player.getCurrentTime());
+      setDuration(player.getDuration());
+    }, 100); // Update 10 times per second
+  };
+
+  const stopTimeUpdates = () => {
+    if (updateInterval) {
+      clearInterval(updateInterval);
+      updateInterval = undefined;
+    }
+  };
+
+  // Start/stop updates based on playing state
+  createEffect(() => {
+    if (isPlaying()) {
+      startTimeUpdates();
+    } else {
+      stopTimeUpdates();
+      // Update one last time when stopped
+      setCurrentTime(player.getCurrentTime());
+      setDuration(player.getDuration());
+    }
+  });
 
   // This hook manages the A/B side tracking - the base player doesn't care
   const playTrack = async (side: "A" | "B", startTime?: number) => {
@@ -101,6 +139,33 @@ export function useReviewAudio(
     }
   };
 
+  // Seek controls
+  const seekForward = (seconds: number) => {
+    player.seekForward(seconds);
+    // Update saved position if paused
+    if (!isPlaying() && currentTrack()) {
+      const newPosition = player.getCurrentTime();
+      if (currentTrack() === "A") {
+        setPausedPositionA(newPosition);
+      } else if (currentTrack() === "B") {
+        setPausedPositionB(newPosition);
+      }
+    }
+  };
+
+  const seekBackward = (seconds: number) => {
+    player.seekBackward(seconds);
+    // Update saved position if paused
+    if (!isPlaying() && currentTrack()) {
+      const newPosition = player.getCurrentTime();
+      if (currentTrack() === "A") {
+        setPausedPositionA(newPosition);
+      } else if (currentTrack() === "B") {
+        setPausedPositionB(newPosition);
+      }
+    }
+  };
+
   // Auto-play effect when new pair loads
   createEffect(() => {
     const a = trackA();
@@ -147,6 +212,7 @@ export function useReviewAudio(
   });
 
   onCleanup(() => {
+    stopTimeUpdates();
     player.destroy();
   });
 
@@ -158,6 +224,12 @@ export function useReviewAudio(
       get isPlaying() {
         return isPlaying();
       },
+      get currentTime() {
+        return currentTime();
+      },
+      get duration() {
+        return duration();
+      },
     },
     {
       playTrack,
@@ -166,6 +238,8 @@ export function useReviewAudio(
       toggle,
       stop,
       cyclePlayback,
+      seekForward,
+      seekBackward,
     },
   ];
 }

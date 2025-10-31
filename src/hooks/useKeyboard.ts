@@ -7,6 +7,8 @@ export interface KeyboardHandlers {
   onSkip?: () => void;
   onQuit?: () => void;
   onCyclePlayback?: () => void;
+  onSeekForward?: () => void;
+  onSeekBackward?: () => void;
 }
 
 /**
@@ -17,6 +19,8 @@ export interface KeyboardHandlers {
  * n - Skip comparison
  * q - Quit/return to home
  * space - Cycle playback (paused → A → B → paused)
+ * left arrow - Seek backward 10 seconds
+ * right arrow - Seek forward 10 seconds
  */
 export function useKeyboard(handlers: KeyboardHandlers) {
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -57,6 +61,14 @@ export function useKeyboard(handlers: KeyboardHandlers) {
       case " ":
         e.preventDefault();
         handlers.onCyclePlayback?.();
+        break;
+      case "arrowleft":
+        e.preventDefault();
+        handlers.onSeekBackward?.();
+        break;
+      case "arrowright":
+        e.preventDefault();
+        handlers.onSeekForward?.();
         break;
     }
   };

@@ -344,6 +344,34 @@
   }
 }
 
+// ===== Audio Progress =====
+.audio-progress {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-family: monospace;
+  font-size: var(--font-size-sm);
+  color: var(--theme-fg-muted);
+  padding: var(--space-2) 0;
+  user-select: none;
+
+  @media (width <= 480px) {
+    font-size: var(--font-size-xs);
+  }
+}
+
+.audio-progress__time {
+  color: var(--theme-fg);
+}
+
+.audio-progress__separator {
+  opacity: 0.6;
+}
+
+.audio-progress__duration {
+  color: var(--theme-fg-secondary);
+}
+
 // ===== Dark Mode Specific =====
 @media (prefers-color-scheme: dark) {
   .review-container {
