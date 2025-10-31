@@ -4,6 +4,7 @@ import { Router, Route } from "@solidjs/router";
 
 import { App } from "./app";
 import { Review } from "./pages/Review";
+import { Categorize } from "./pages/Categorize";
 
 const root = document.getElementById("root");
 
@@ -18,6 +19,7 @@ render(
     <Router>
       <Route path="/" component={App} />
       <Route path="/review" component={Review} />
+      <Route path="/categorize" component={Categorize} />
     </Router>
   ),
   root!,

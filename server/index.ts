@@ -6,6 +6,14 @@ import { eq } from "drizzle-orm";
 import * as rx from "rxjs";
 
 import { listTracks, optsFromRequest, type UnprocessedTask } from "./api";
+import {
+  getBuckets,
+  getBucketValues,
+  getNextTrack,
+  submitCategorization,
+  getAlbumTrackCount,
+  submitAlbumCategorization,
+} from "./api/categorize";
 import { submitComparison } from "./api/comparison";
 import { getPairs } from "./api/pairs";
 import { enqueueTask, taskEventsById, tasks$ } from "./api/task";
@@ -33,7 +41,10 @@ interface RangeRequest {
   end: number;
 }
 
-const parseRangeHeader = (rangeHeader: string, fileSize: number): RangeRequest | null => {
+const parseRangeHeader = (
+  rangeHeader: string,
+  fileSize: number,
+): RangeRequest | null => {
   // Format: "bytes=0-1023" or "bytes=1024-" or "bytes=-1024"
   const match = rangeHeader.match(/^bytes=(\d*)-(\d*)$/);
   if (!match) return null;
@@ -50,7 +61,13 @@ const parseRangeHeader = (rangeHeader: string, fileSize: number): RangeRequest |
   }
 
   // Validation: invalid ranges
-  if (isNaN(start) || isNaN(end) || start > end || start < 0 || end >= fileSize) {
+  if (
+    isNaN(start) ||
+    isNaN(end) ||
+    start > end ||
+    start < 0 ||
+    end >= fileSize
+  ) {
     return null;
   }
 
@@ -187,5 +204,11 @@ Bun.serve({
     "/api/albums/:albumId/artwork": (req) => serveAlbumArt(db, req),
     "/api/comparison": (req) => submitComparison(db, req),
     "/api/pairs": (req) => getPairs(db, req),
+    "/api/buckets": (_req) => getBuckets(db),
+    "/api/buckets/values": (req) => getBucketValues(db, req),
+    "/api/categorize/next": (req) => getNextTrack(db, req),
+    "/api/categorize": (req) => submitCategorization(db, req),
+    "/api/categorize/album": (req) => submitAlbumCategorization(db, req),
+    "/api/albums/track-count": (req) => getAlbumTrackCount(db, req),
   },
 });

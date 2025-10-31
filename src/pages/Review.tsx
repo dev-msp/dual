@@ -200,8 +200,12 @@ export const Review = () => {
   const autoplay = () => reviewStore.settings.autoplay;
 
   // State for score display
-  const [scoreUpdateA, setScoreUpdateA] = createSignal<ScoreUpdateInfo | null>(null);
-  const [scoreUpdateB, setScoreUpdateB] = createSignal<ScoreUpdateInfo | null>(null);
+  const [scoreUpdateA, setScoreUpdateA] = createSignal<ScoreUpdateInfo | null>(
+    null,
+  );
+  const [scoreUpdateB, setScoreUpdateB] = createSignal<ScoreUpdateInfo | null>(
+    null,
+  );
   const [isShowingScores, setIsShowingScores] = createSignal(false);
 
   const [audioState, audioControls] = useReviewAudio(trackA, trackB, autoplay);
@@ -403,8 +407,10 @@ export const Review = () => {
                 track={trackA()!}
                 side="A"
                 keyHint="A"
-                isPlaying={audioState.currentTrack === "A" && audioState.isPlaying}
-                onPlay={() => audioControls.playTrack("A")}
+                isPlaying={
+                  audioState.currentTrack === "A" && audioState.isPlaying
+                }
+                onPlay={() => void audioControls.playTrack("A")}
                 onSelect={handleSelectA}
               />
             </div>
@@ -416,8 +422,10 @@ export const Review = () => {
                 track={trackB()!}
                 side="B"
                 keyHint="B"
-                isPlaying={audioState.currentTrack === "B" && audioState.isPlaying}
-                onPlay={() => audioControls.playTrack("B")}
+                isPlaying={
+                  audioState.currentTrack === "B" && audioState.isPlaying
+                }
+                onPlay={() => void audioControls.playTrack("B")}
                 onSelect={handleSelectB}
               />
             </div>

@@ -9,6 +9,8 @@ export interface KeyboardHandlers {
   onCyclePlayback?: () => void;
   onSeekForward?: () => void;
   onSeekBackward?: () => void;
+  onSubmit?: () => void;
+  onAlbumMode?: () => void;
 }
 
 /**
@@ -40,7 +42,12 @@ export function useKeyboard(handlers: KeyboardHandlers) {
     switch (key) {
       case "a":
         e.preventDefault();
-        handlers.onSelectA?.();
+        // For categorization context, prefer onAlbumMode; for review, use onSelectA
+        if (handlers.onAlbumMode) {
+          handlers.onAlbumMode();
+        } else {
+          handlers.onSelectA?.();
+        }
         break;
       case "b":
         e.preventDefault();
@@ -50,9 +57,13 @@ export function useKeyboard(handlers: KeyboardHandlers) {
         e.preventDefault();
         handlers.onDraw?.();
         break;
-      case "n":
+      case "s":
         e.preventDefault();
         handlers.onSkip?.();
+        break;
+      case "enter":
+        e.preventDefault();
+        handlers.onSubmit?.();
         break;
       case "q":
         e.preventDefault();
