@@ -34,9 +34,6 @@ export function useReviewAudio(
   const [pausedPositionA, setPausedPositionA] = createSignal(0);
   const [pausedPositionB, setPausedPositionB] = createSignal(0);
 
-  // Track cycle state: 0=paused, 1=playing A, 2=playing B
-  const [cycleState, setCycleState] = createSignal(0);
-
   // Track current time and duration for display
   const [currentTime, setCurrentTime] = createSignal(0);
   const [duration, setDuration] = createSignal<number | null>(null);
@@ -121,8 +118,19 @@ export function useReviewAudio(
 
   // Cycle through: paused -> playing A -> playing B -> paused
   const cyclePlayback = () => {
-    const nextState = (cycleState() + 1) % 3;
-    setCycleState(nextState);
+    // Derive current cycle state from currentTrack and isPlaying
+    let currentState: 0 | 1 | 2;
+    if (!isPlaying() || currentTrack() === null) {
+      currentState = 0; // paused
+    } else if (currentTrack() === "A" && isPlaying()) {
+      currentState = 1; // playing A
+    } else if (currentTrack() === "B" && isPlaying()) {
+      currentState = 2; // playing B
+    } else {
+      currentState = 0; // fallback to paused
+    }
+
+    const nextState = (currentState + 1) % 3;
 
     if (nextState === 0) {
       // Pause
@@ -182,21 +190,18 @@ export function useReviewAudio(
       // Reset paused positions for new pair
       setPausedPositionA(0);
       setPausedPositionB(0);
-      setCycleState(0);
       void playTrack("A");
     } else if (!a || !b) {
       // Stop playback if tracks are cleared
       setLastPairId(null);
       setPausedPositionA(0);
       setPausedPositionB(0);
-      setCycleState(0);
       stop();
     } else if (pairId && pairId !== prevPairId) {
       // New pair loaded - stop current playback and update pair ID
       setLastPairId(pairId);
       setPausedPositionA(0);
       setPausedPositionB(0);
-      setCycleState(0);
       stop();
     }
   });
