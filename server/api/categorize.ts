@@ -237,13 +237,11 @@ export function getNextTrack(db: Db, req: Request): Response {
 
     // Get all track IDs that have at least one of the bucket attributes
     const conditions = bucketKeys.map((key) => eq(itemAttributes.key, key));
-    const whereCondition =
-      conditions.length === 1 ? conditions[0] : or(...conditions);
 
     const tracksWithAttributes = db
       .selectDistinct({ id: itemAttributes.entity_id })
       .from(itemAttributes)
-      .where(whereCondition)
+      .where(or(...conditions))
       .all();
 
     const tracksWithAttributeIds = new Set(
@@ -262,6 +260,8 @@ export function getNextTrack(db: Db, req: Request): Response {
         album_id: scoredItems.album_id,
       })
       .from(scoredItems)
+      .where(notInArray(scoredItems.id, Array.from(tracksWithAttributeIds)))
+      .orderBy(sql`RANDOM()`)
       .all();
 
     // Find first track missing ALL buckets
