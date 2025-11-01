@@ -1,10 +1,10 @@
 /* @refresh reload */
-import { render } from "solid-js/web";
 import { Router, Route } from "@solidjs/router";
+import { render } from "solid-js/web";
 
 import { App } from "./app";
-import { Review } from "./pages/Review";
 import { Categorize } from "./pages/Categorize";
+import { Review } from "./pages/Review";
 
 const root = document.getElementById("root");
 

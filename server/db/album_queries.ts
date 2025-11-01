@@ -1,5 +1,6 @@
-import { albums } from "./schema";
 import { generateAlbumHash } from "../utils/hash";
+
+import { albums } from "./schema";
 
 import { db } from ".";
 

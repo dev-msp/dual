@@ -20,8 +20,8 @@ import { getPairs } from "./api/pairs";
 import { enqueueTask, taskEventsById, tasks$ } from "./api/task";
 import { TEMP_DIR } from "./api/worker";
 import { db, type Db } from "./db";
-import { items } from "./db/schema";
 import { buildAlbumHashMappings } from "./db/album_queries";
+import { items } from "./db/schema";
 
 // Global album hash mappings - initialized on startup
 export let albumHashToId: Map<string, number> = new Map();
@@ -33,7 +33,7 @@ const initAlbumMappings = () => {
   albumHashToId = hashToId;
   albumIdToHash = idToHash;
   console.log(
-    `Initialized album mappings: ${albumHashToId.size} albums indexed`
+    `Initialized album mappings: ${albumHashToId.size} albums indexed`,
   );
 };
 

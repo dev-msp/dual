@@ -1,13 +1,15 @@
 import { eq, and } from "drizzle-orm";
 
-import type { Db } from "./index";
-import { itemAttributes } from "./schema";
 import {
   DEFAULT_RATING,
   DEFAULT_RD,
   DEFAULT_VOLATILITY,
   type GlickoRating,
 } from "../utils/glicko2";
+
+import { itemAttributes } from "./schema";
+
+import type { Db } from "./index";
 
 /**
  * Get the current Glicko-2 rating for a track
@@ -50,17 +52,18 @@ export function getTrackScore(db: Db, trackId: number): number {
  * Update or insert a track's Glicko-2 rating
  * Also updates the last_rated_at timestamp
  */
-export function setTrackRating(db: Db, trackId: number, rating: GlickoRating): void {
+export function setTrackRating(
+  db: Db,
+  trackId: number,
+  rating: GlickoRating,
+): void {
   // Helper to update or insert a single attribute
   const upsertAttribute = (key: string, value: string) => {
     const existing = db
       .select({ id: itemAttributes.id })
       .from(itemAttributes)
       .where(
-        and(
-          eq(itemAttributes.entity_id, trackId),
-          eq(itemAttributes.key, key),
-        ),
+        and(eq(itemAttributes.entity_id, trackId), eq(itemAttributes.key, key)),
       )
       .get();
 
@@ -197,7 +200,11 @@ export function getTrackLastRatedAt(db: Db, trackId: number): number | null {
 /**
  * Update or insert a track's last rated timestamp
  */
-export function setTrackLastRatedAt(db: Db, trackId: number, timestamp: number): void {
+export function setTrackLastRatedAt(
+  db: Db,
+  trackId: number,
+  timestamp: number,
+): void {
   const existing = db
     .select({ id: itemAttributes.id })
     .from(itemAttributes)
