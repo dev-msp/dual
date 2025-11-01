@@ -24,6 +24,17 @@ export interface NormalizedKeyboardEvent {
   timestamp: number;
 }
 
+export interface ActionBinding {
+  action: string;
+  context?: string;
+  preventDefault?: boolean;
+}
+
+export interface KeyboardAction {
+  event: NormalizedKeyboardEvent;
+  binding: ActionBinding;
+}
+
 /**
  * Create the core keyboard$ observable
  *
@@ -60,13 +71,13 @@ export function createKeyboardSource(): rx.Observable<NormalizedKeyboardEvent> {
 /**
  * Keymap configuration: maps keys to actions
  */
-export interface KeymapConfig {
-  [key: string]: {
-    action: string;
-    context?: string; // Optional context filter
-    preventDefault?: boolean;
-  };
-}
+export type KeymapConfig = (key: string) =>
+  | {
+      action: string;
+      context?: string;
+      preventDefault?: boolean;
+    }
+  | undefined;
 
 /**
  * Configuration for action stream routing
@@ -103,61 +114,25 @@ export interface ActionStreamConfig {
  */
 export function createActionStreams(
   config: ActionStreamConfig,
-): Record<string, rx.Observable<KeyboardAction>> {
-  const {
-    keymap,
-    skipFormElements = true,
-    keyboardEvent$,
-    contextCheck,
-  } = config;
+): rx.OperatorFunction<NormalizedKeyboardEvent, KeyboardAction> {
+  const { keymap, skipFormElements = true, contextCheck } = config;
 
-  // Build action streams by grouping keybindings by action type
-  const actionMap = new Map<string, rx.Observable<KeyboardAction>>();
-
-  Object.entries(keymap).forEach(([key, binding]) => {
-    const keyStream = keyboardEvent$.pipe(
-      // Filter by key
-      op.filter((e) => e.key === key),
-      // Filter out form elements if configured
-      op.filter((e) => !skipFormElements || !e.isFormElement),
-      // Apply context filter if provided
-      op.filter((e) => {
-        if (binding.context && contextCheck) {
-          return contextCheck(binding.context);
-        }
-        return true;
-      }),
-      // Prevent default if configured
-      op.tap((e) => {
-        if (binding.preventDefault) {
-          e.originalEvent.preventDefault();
-        }
-      }),
-      // Convert to action
-      op.map(
-        (e): KeyboardAction => ({
-          type: binding.action,
-          key,
-          timestamp: e.timestamp,
-        }),
-      ),
-    );
-
-    // Merge with existing action stream or create new one
-    if (actionMap.has(binding.action)) {
-      const existing = actionMap.get(binding.action)!;
-      actionMap.set(binding.action, rx.merge(existing, keyStream));
-    } else {
-      actionMap.set(binding.action, keyStream);
-    }
-  });
-
-  // Convert map to object and add shareReplay for multi-subscription efficiency
-  return Object.fromEntries(
-    Array.from(actionMap.entries()).map(([action, stream]) => [
-      action,
-      stream.pipe(op.shareReplay(0)), // Share without buffering
-    ]),
+  return rx.pipe(
+    op.map((e: NormalizedKeyboardEvent) => {
+      const binding = keymap(e.key);
+      return binding ? { event: e, binding } : null;
+    }),
+    op.filter((x): x is KeyboardAction => x !== null),
+    // Filter out form elements if configured
+    op.filter(({ event }) => !skipFormElements || !event.isFormElement),
+    // Apply context filter if provided
+    op.filter(({ binding }) => contextCheck?.(binding.context) ?? true),
+    // Prevent default if configured
+    op.tap(({ event, binding }) => {
+      if (binding.preventDefault) {
+        event.originalEvent.preventDefault();
+      }
+    }),
   );
 }
 
@@ -187,5 +162,22 @@ export function attachKeyboardListener(
 
   return () => {
     window.removeEventListener("keydown", handleKeyDown);
+  };
+}
+
+export function normalizeKeyboardEvent(
+  e: KeyboardEvent,
+): NormalizedKeyboardEvent {
+  const target = e.target as HTMLElement;
+  const isFormElement =
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT";
+
+  return {
+    key: e.key.toLowerCase(),
+    originalEvent: e,
+    isFormElement,
+    timestamp: Date.now(),
   };
 }

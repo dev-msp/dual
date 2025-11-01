@@ -1,0 +1,17 @@
+{
+  "servers": [
+    {
+      "extensions": [
+        "js",
+        "ts",
+        "jsx",
+        "tsx"
+      ],
+      "command": [
+        "typescript-language-server",
+        "--stdio"
+      ],
+      "rootDir": "."
+    }
+  ]
+}

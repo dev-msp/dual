@@ -20,7 +20,7 @@ import type { KeymapConfig } from "./index";
  * ← - Seek backward 10 seconds
  * → - Seek forward 10 seconds
  */
-export const reviewKeybindings: KeymapConfig = {
+export const reviewKeybindings: KeymapConfig = fromKvMapping({
   a: {
     action: "SELECT_A",
     preventDefault: true,
@@ -65,7 +65,7 @@ export const reviewKeybindings: KeymapConfig = {
  * Q - Quit/return to home
  * 1-9, 0, a, s, d, f, g, h, j, k, l - Quick select category option
  */
-export const categorizeKeybindings: KeymapConfig = {
+export const categorizeKeybindings: KeymapConfig = fromKvMapping({
   enter: {
     action: "SUBMIT",
     preventDefault: true,
@@ -150,7 +150,7 @@ export const categorizeKeybindings: KeymapConfig = {
     action: "SELECTION_KEY",
     preventDefault: true,
   },
-};
+});
 
 /**
  * Compose multiple keymaps
@@ -163,5 +163,15 @@ export const categorizeKeybindings: KeymapConfig = {
  * const reviewKeysWithGlobal = composeKeymaps(globalKeybindings, reviewKeybindings);
  */
 export function composeKeymaps(...keymaps: KeymapConfig[]): KeymapConfig {
-  return Object.assign({}, ...keymaps);
+  return (key: string) =>
+    keymaps.reduce((xs, x) => {
+      const binding = x(key);
+      return binding ? binding : xs;
+    }, undefined as ReturnType<KeymapConfig>);
+}
+
+function fromKvMapping<K extends string, V>(
+  obj: Record<K, V>,
+): (key: string) => V | undefined {
+  return (key: string) => obj[key as K];
 }

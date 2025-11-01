@@ -58,8 +58,13 @@ export interface UseKeyboardActionConfig {
  * useKeyboardAction({ keymap: reviewKeymap, handlers });
  */
 export function useKeyboardAction(config: UseKeyboardActionConfig): void {
-  const { keymap, handlers, skipFormElements = true, contextCheck, enabled } =
-    config;
+  const {
+    keymap,
+    handlers,
+    skipFormElements = true,
+    contextCheck,
+    enabled,
+  } = config;
 
   // Create or reuse the global keyboard source
   const keyboard$ = createKeyboardSource();
@@ -76,22 +81,38 @@ export function useKeyboardAction(config: UseKeyboardActionConfig): void {
   createEffect(() => {
     const subscriptions: rx.Subscription[] = [];
 
-    Object.entries(actionStreams).forEach(([actionType, actionStream$]) => {
-      if (!handlers[actionType]) return; // Skip if no handler
+    // Process keyboard events through the action stream pipeline
+    const actionStream$ = keyboard$.pipe(
+      actionStreams,
+      op.filter(() => enabled?.() ?? true), // Filter based on enabled predicate
+    );
 
-      // Filter by enabled() if provided
-      const stream = enabled
-        ? actionStream$.pipe(op.filter(() => enabled()))
-        : actionStream$;
-
-      const subscription = stream.subscribe({
-        next: (action) => {
-          handlers[actionType](action);
-        },
-        error: (err) => {
-          console.error(`Keyboard action error for ${actionType}:`, err);
-        },
-      });
+    // Subscribe to each action type
+    Object.entries(handlers).forEach(([actionType, handler]) => {
+      const subscription = actionStream$
+        .pipe(
+          op.filter(({ binding }) => binding.action === actionType),
+          op.map(({ event }) => event),
+        )
+        .subscribe({
+          next: (event) => {
+            const x = handler(event);
+            if (x instanceof Promise) {
+              x.catch((err) => {
+                console.error(
+                  `Error in keyboard action handler for ${actionType}:`,
+                  err,
+                );
+              });
+            }
+          },
+          error: (err) => {
+            console.error(
+              `Error in keyboard action handler for ${actionType}:`,
+              err,
+            );
+          },
+        });
 
       subscriptions.push(subscription);
     });
@@ -135,7 +156,10 @@ export function createActionDispatcher() {
     action$: action$.asObservable(),
     getHandler: (actionType: string) => (action: unknown) => {
       if (typeof action === "object" && action !== null) {
-        action$.next({ ...(action as Record<string, unknown>), type: actionType });
+        action$.next({
+          ...(action as Record<string, unknown>),
+          type: actionType,
+        });
       } else {
         action$.next({ type: actionType });
       }
