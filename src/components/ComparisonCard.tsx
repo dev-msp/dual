@@ -35,7 +35,7 @@ export const ComparisonCard = (props: ComparisonCardProps) => {
           }
         >
           <img
-            src={props.track.artwork}
+            src={props.track.artwork || ""}
             alt={`${props.track.title} album artwork`}
             loading="lazy"
           />

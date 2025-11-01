@@ -5,7 +5,9 @@ import z from "zod";
 import { BucketSelector } from "../components/BucketSelector";
 import { CategorizeCard } from "../components/CategorizeCard";
 import { CategorizeStats } from "../components/CategorizeStats";
-import { useKeyboard } from "../hooks/useKeyboard";
+import { useKeyboardAction } from "../lib/keyboard/solid-integration";
+import { categorizeKeybindings } from "../lib/keyboard/keymaps";
+import type { CategorizeAction } from "../lib/keyboard/actions";
 import {
   categorizeStore,
   setAvailableBuckets,
@@ -153,7 +155,7 @@ export const Categorize = () => {
           setError(null);
           // Fetch album track count if track has an album_id or albumHash
           if (parsed.track.album_id) {
-            await fetchAlbumTrackCount(parsed.track.album_id, parsed.track.albumHash);
+            await fetchAlbumTrackCount(parsed.track.album_id, parsed.track.albumHash || undefined);
           } else {
             setAlbumTrackCount(null);
           }
@@ -255,16 +257,19 @@ export const Categorize = () => {
     setAlbumMode(enabled);
   };
 
-  const handleAlbumModeKeyboard = () => {
-    setAlbumMode(!categorizeStore.albumMode);
-  };
-
-  // Keyboard shortcuts
-  useKeyboard({
-    onSubmit: () => void submitCategorization(),
-    onSkip: () => void handleSkip(),
-    onQuit: handleQuit,
-    onAlbumMode: handleAlbumModeKeyboard,
+  // Keyboard shortcuts via RxJS streams
+  useKeyboardAction({
+    keymap: categorizeKeybindings,
+    handlers: {
+      SUBMIT: () => void submitCategorization(),
+      SKIP: () => void handleSkip(),
+      QUIT: handleQuit,
+      TOGGLE_ALBUM_MODE: () => setAlbumMode(!categorizeStore.albumMode),
+    },
+    // Only allow TOGGLE_ALBUM_MODE context when in active session
+    contextCheck: (context) =>
+      context === "albumMode" ? sessionStarted() : true,
+    enabled: () => sessionStarted(),
   });
 
   return (

@@ -80,7 +80,7 @@ const createTrackColumns = <Keys extends keyof Track>(
         size: "1fr",
         cell: (props) => (
           <NoWrap style={{ "text-align": "left" }}>
-            {props.value !== null ? props.value.toFixed(2) : "-"}
+            {props.value !== null && props.value !== undefined ? props.value.toFixed(2) : "-"}
           </NoWrap>
         ),
       },
@@ -90,7 +90,7 @@ const createTrackColumns = <Keys extends keyof Track>(
         header: "Last Scored",
         size: "1fr",
         cell: (props) => {
-          if (props.value === null) return <NoWrap>-</NoWrap>;
+          if (props.value === null || props.value === undefined) return <NoWrap>-</NoWrap>;
 
           const now = Math.floor(Date.now() / 1000);
           const diff = now - props.value;

@@ -22,7 +22,9 @@ export function getTrackRating(db: Db, trackId: number): GlickoRating {
 
   const attributes: Record<string, string> = {};
   for (const row of results) {
-    attributes[row.key] = row.value || "";
+    if (row.key) {
+      attributes[row.key] = row.value || "";
+    }
   }
 
   const rating = parseFloat(attributes["rating"] || attributes["score"] || "");
@@ -130,7 +132,7 @@ export function getTrackRatings(
   }
 
   for (const result of results) {
-    if (result.entityId && trackIds.includes(result.entityId)) {
+    if (result.entityId && trackIds.includes(result.entityId) && result.key) {
       trackData[result.entityId][result.key] = result.value || "";
     }
   }

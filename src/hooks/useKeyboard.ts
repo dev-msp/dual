@@ -14,6 +14,35 @@ export interface KeyboardHandlers {
 }
 
 /**
+ * @deprecated Use `useKeyboardAction` from `../lib/keyboard/solid-integration` instead
+ *
+ * This hook has been superseded by an RxJS-based event stream architecture.
+ * The new system provides:
+ * - Declarative, composable keymaps
+ * - Type-safe domain-specific actions
+ * - Middleware support (debouncing, filtering, etc.)
+ * - Better separation of concerns
+ *
+ * Migration example:
+ * ```
+ * // Old
+ * useKeyboard({
+ *   onSelectA: () => { ... },
+ *   onSkip: () => { ... },
+ * });
+ *
+ * // New
+ * useKeyboardAction({
+ *   keymap: reviewKeybindings,
+ *   handlers: {
+ *     SELECT_A: () => { ... },
+ *     SKIP: () => { ... },
+ *   }
+ * });
+ * ```
+ *
+ * This hook will be removed in the next major version.
+ *
  * Hook to handle keyboard shortcuts for review flow
  * a - Select track A
  * b - Select track B

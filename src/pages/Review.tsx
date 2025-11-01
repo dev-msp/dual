@@ -8,9 +8,11 @@ import { AudioProgress } from "../components/AudioProgress";
 import { ComparisonCard } from "../components/ComparisonCard";
 import { ControlBand } from "../components/ControlBand";
 import { ScoreDisplay, type ScoreUpdateInfo } from "../components/ScoreDisplay";
-import { useKeyboard } from "../hooks/useKeyboard";
 import { useReviewAudio } from "../hooks/useReviewAudio";
 import { filterMap } from "../lib/reactive";
+import { useKeyboardAction } from "../lib/keyboard/solid-integration";
+import { reviewKeybindings } from "../lib/keyboard/keymaps";
+import type { ReviewAction } from "../lib/keyboard/actions";
 import {
   reviewStore,
   setCurrentPair,
@@ -331,25 +333,19 @@ export const Review = () => {
     audioControls.cyclePlayback();
   };
 
-  // Handle seek forward/backward
-  const handleSeekForward = () => {
-    audioControls.seekForward(10);
-  };
-
-  const handleSeekBackward = () => {
-    audioControls.seekBackward(10);
-  };
-
-  // Set up keyboard shortcuts
-  useKeyboard({
-    onSelectA: handleSelectA,
-    onSelectB: handleSelectB,
-    onDraw: handleDraw,
-    onSkip: handleSkip,
-    onQuit: handleQuit,
-    onCyclePlayback: handleCyclePlayback,
-    onSeekForward: handleSeekForward,
-    onSeekBackward: handleSeekBackward,
+  // Handle keyboard actions via RxJS streams
+  useKeyboardAction({
+    keymap: reviewKeybindings,
+    handlers: {
+      SELECT_A: handleSelectA,
+      SELECT_B: handleSelectB,
+      DRAW: handleDraw,
+      SKIP: handleSkip,
+      QUIT: handleQuit,
+      CYCLE_PLAYBACK: handleCyclePlayback,
+      SEEK_FORWARD: () => audioControls.seekForward(10),
+      SEEK_BACKWARD: () => audioControls.seekBackward(10),
+    },
   });
 
   // Fetch initial pair on mount
