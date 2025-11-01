@@ -257,44 +257,44 @@ export const Categorize = () => {
     setAlbumMode(enabled);
   };
 
-  const handleNumberKey = (number: number) => {
-    // Apply number key selection to each bucket
-    // For each bucket, if it has an option at this index, select it
+  // Define the keymap sequence: 1-9, 0, then a-l (homerow)
+  const KEYMAP_SEQUENCE = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "a", "s", "d", "f", "g", "h", "j", "k", "l"];
+
+  const handleSelectionKey = (key: string) => {
+    const keyIndex = KEYMAP_SEQUENCE.indexOf(key);
+    if (keyIndex === -1) return;
+
+    // Build a flat list of all options with their bucket associations
+    // Excludes "other" buttons as per user preference
+    const allOptions: Array<{ bucket: string; value: string; index: number }> = [];
     for (const bucket of categorizeStore.activeBuckets) {
       const values = categorizeStore.bucketValues[bucket] || [];
-      // number 0 selects "other", numbers 1-9 select by index (subtract 1 for 0-based indexing)
-      if (number === 0) {
-        // 0 selects "other" - set to empty string to trigger the "other" input
-        setCurrentValue(bucket, "");
-      } else if (number - 1 < values.length) {
-        // 1-9 selects by index
-        setCurrentValue(bucket, values[number - 1]);
+      for (let i = 0; i < values.length; i++) {
+        allOptions.push({ bucket, value: values[i], index: allOptions.length });
       }
+    }
+
+    // Find the option that corresponds to this key
+    if (keyIndex < allOptions.length) {
+      const option = allOptions[keyIndex];
+      setCurrentValue(option.bucket, option.value);
     }
   };
 
   // Keyboard shortcuts via RxJS streams
-  useKeyboardAction<CategorizeAction>({
+  useKeyboardAction({
     keymap: categorizeKeybindings,
     handlers: {
       SUBMIT: () => void submitCategorization(),
-      SKIP: () => void handleSkip(),
       QUIT: handleQuit,
-      TOGGLE_ALBUM_MODE: () => setAlbumMode(!categorizeStore.albumMode),
-      NUMBER_KEY: (action) => {
-        // Extract the number from the key that triggered the action
+      SELECTION_KEY: (action) => {
+        // Extract the key from the action
         if (typeof action === "object" && action !== null && "key" in action) {
           const key = (action as { key: string }).key;
-          const number = parseInt(key, 10);
-          if (!isNaN(number)) {
-            handleNumberKey(number);
-          }
+          handleSelectionKey(key);
         }
       },
     },
-    // Only allow TOGGLE_ALBUM_MODE context when in active session
-    contextCheck: (context) =>
-      context === "albumMode" ? sessionStarted() : true,
     enabled: () => sessionStarted(),
   });
 
@@ -313,6 +313,7 @@ export const Categorize = () => {
                 loading={categorizeStore.loading}
                 albumMode={categorizeStore.albumMode}
                 albumTrackCount={categorizeStore.albumTrackCount}
+                keymapSequence={KEYMAP_SEQUENCE}
                 onValueChange={(bucket, value) =>
                   handleValueChange(bucket, value)
                 }

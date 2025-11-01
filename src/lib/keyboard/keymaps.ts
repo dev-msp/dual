@@ -59,22 +59,13 @@ export const reviewKeybindings: KeymapConfig = {
  * Categorize page keybindings
  *
  * Keyboard shortcuts:
- * A - Toggle album mode
- * S - Skip track
+ * A - Toggle album mode (when context allows)
+ * S - Skip track (when not selecting categories)
  * Enter - Submit categorization
  * Q - Quit/return to home
- * 0-9 - Quick select category option by number
+ * 1-9, 0, a, s, d, f, g, h, j, k, l - Quick select category option
  */
 export const categorizeKeybindings: KeymapConfig = {
-  a: {
-    action: "TOGGLE_ALBUM_MODE",
-    preventDefault: true,
-    context: "albumMode", // Can be filtered based on UI state
-  },
-  s: {
-    action: "SKIP",
-    preventDefault: true,
-  },
   enter: {
     action: "SUBMIT",
     preventDefault: true,
@@ -84,43 +75,79 @@ export const categorizeKeybindings: KeymapConfig = {
     preventDefault: true,
   },
   "0": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "1": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "2": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "3": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "4": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "5": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "6": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "7": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "8": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
   "9": {
-    action: "NUMBER_KEY",
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  a: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  s: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  d: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  f: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  g: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  h: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  j: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  k: {
+    action: "SELECTION_KEY",
+    preventDefault: true,
+  },
+  l: {
+    action: "SELECTION_KEY",
     preventDefault: true,
   },
 };

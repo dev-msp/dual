@@ -22,7 +22,7 @@ export type CategorizeAction =
   | { type: "SKIP" }
   | { type: "SUBMIT" }
   | { type: "QUIT" }
-  | { type: "NUMBER_KEY"; number: number };
+  | { type: "SELECTION_KEY"; key: string };
 
 /** Global user actions (available across all pages) */
 export type GlobalAction = { type: "QUIT" };
@@ -55,9 +55,9 @@ export const actions = {
   categorizeSkip: (): CategorizeAction => ({ type: "SKIP" }),
   categorizeSubmit: (): CategorizeAction => ({ type: "SUBMIT" }),
   categorizeQuit: (): CategorizeAction => ({ type: "QUIT" }),
-  categorizeNumberKey: (number: number): CategorizeAction => ({
-    type: "NUMBER_KEY",
-    number,
+  categorizeSelectionKey: (key: string): CategorizeAction => ({
+    type: "SELECTION_KEY",
+    key,
   }),
 
   globalQuit: (): GlobalAction => ({ type: "QUIT" }),

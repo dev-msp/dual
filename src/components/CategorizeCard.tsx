@@ -10,6 +10,7 @@ export interface CategorizeCardProps {
   loading: boolean;
   albumMode: boolean;
   albumTrackCount: number | null;
+  keymapSequence: string[];
   onValueChange: (bucket: string, value: string) => void;
   onSubmit: () => void;
   onSkip: () => void;
@@ -80,10 +81,20 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
       {/* Bucket Inputs */}
       <div class="categorize-card__inputs">
         <For each={props.buckets}>
-          {(bucket) => {
+          {(bucket, bucketIndex) => {
             const isOtherSelected = () => {
               const val = props.currentValues[bucket];
               return val && !props.bucketValues[bucket]?.includes(val);
+            };
+
+            // Calculate the global offset for this bucket's options
+            const getGlobalOffset = () => {
+              let offset = 0;
+              for (let i = 0; i < bucketIndex(); i++) {
+                const prevBucket = props.buckets[i];
+                offset += (props.bucketValues[prevBucket] || []).length;
+              }
+              return offset;
             };
 
             return (
@@ -91,24 +102,29 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
                 <label class="categorize-card__input-label">{bucket}</label>
                 <div class="categorize-card__button-group">
                   <For each={props.bucketValues[bucket] || []}>
-                    {(value, index) => (
-                      <button
-                        class={`categorize-card__option-btn ${
-                          props.currentValues[bucket] === value
-                            ? "categorize-card__option-btn--selected"
-                            : ""
-                        }`}
-                        onClick={() => props.onValueChange(bucket, value)}
-                        disabled={props.loading}
-                        type="button"
-                        title={`${value} (${index() + 1})`}
-                      >
-                        {value}
-                        <Show when={index() < 9}>
-                          <span class="btn-badge">{index() + 1}</span>
-                        </Show>
-                      </button>
-                    )}
+                    {(value, index) => {
+                      const globalIndex = () => getGlobalOffset() + index();
+                      const keymapKey = () => props.keymapSequence[globalIndex()];
+
+                      return (
+                        <button
+                          class={`categorize-card__option-btn ${
+                            props.currentValues[bucket] === value
+                              ? "categorize-card__option-btn--selected"
+                              : ""
+                          }`}
+                          onClick={() => props.onValueChange(bucket, value)}
+                          disabled={props.loading}
+                          type="button"
+                          title={keymapKey() ? `${value} (${keymapKey()})` : value}
+                        >
+                          {value}
+                          <Show when={keymapKey()}>
+                            <span class="btn-badge">{keymapKey()}</span>
+                          </Show>
+                        </button>
+                      );
+                    }}
                   </For>
                   <button
                     class={`categorize-card__option-btn categorize-card__option-btn--other ${
@@ -123,10 +139,9 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
                     }}
                     disabled={props.loading}
                     type="button"
-                    title="other (0)"
+                    title="other"
                   >
                     other
-                    <span class="btn-badge">0</span>
                   </button>
                 </div>
                 <Show when={isOtherSelected()}>
@@ -174,7 +189,7 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
           onClick={props.onSkip}
           disabled={props.loading}
         >
-          Skip <span class="btn-badge">X</span>
+          Skip
         </button>
       </div>
     </div>
