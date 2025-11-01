@@ -44,10 +44,10 @@ export interface KeyboardHandlers {
  * This hook will be removed in the next major version.
  *
  * Hook to handle keyboard shortcuts for review flow
- * a - Select track A
+ * a - Select track A / Toggle album mode (categorization)
  * b - Select track B
  * d - Mark as draw
- * n - Skip comparison
+ * x - Skip comparison / Skip track (categorization)
  * q - Quit/return to home
  * space - Cycle playback (paused → A → B → paused)
  * left arrow - Seek backward 10 seconds
@@ -86,7 +86,7 @@ export function useKeyboard(handlers: KeyboardHandlers) {
         e.preventDefault();
         handlers.onDraw?.();
         break;
-      case "s":
+      case "x":
         e.preventDefault();
         handlers.onSkip?.();
         break;

@@ -80,35 +80,73 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
       {/* Bucket Inputs */}
       <div class="categorize-card__inputs">
         <For each={props.buckets}>
-          {(bucket) => (
-            <div class="categorize-card__input-group">
-              <label class="categorize-card__input-label">{bucket}</label>
-              <div class="categorize-card__input-wrapper">
-                <input
-                  type="text"
-                  list={`${bucket}-values`}
-                  class="categorize-card__input"
-                  placeholder={`Enter ${bucket}...`}
-                  value={props.currentValues[bucket] || ""}
-                  onInput={(e) =>
-                    props.onValueChange(bucket, e.currentTarget.value)
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      props.onSubmit();
-                    }
-                  }}
-                  disabled={props.loading}
-                  autocomplete="off"
-                />
-                <datalist id={`${bucket}-values`}>
+          {(bucket) => {
+            const isOtherSelected = () => {
+              const val = props.currentValues[bucket];
+              return val && !props.bucketValues[bucket]?.includes(val);
+            };
+
+            return (
+              <div class="categorize-card__input-group">
+                <label class="categorize-card__input-label">{bucket}</label>
+                <div class="categorize-card__button-group">
                   <For each={props.bucketValues[bucket] || []}>
-                    {(value) => <option value={value} />}
+                    {(value) => (
+                      <button
+                        class={`categorize-card__option-btn ${
+                          props.currentValues[bucket] === value
+                            ? "categorize-card__option-btn--selected"
+                            : ""
+                        }`}
+                        onClick={() => props.onValueChange(bucket, value)}
+                        disabled={props.loading}
+                        type="button"
+                      >
+                        {value}
+                      </button>
+                    )}
                   </For>
-                </datalist>
+                  <button
+                    class={`categorize-card__option-btn categorize-card__option-btn--other ${
+                      isOtherSelected()
+                        ? "categorize-card__option-btn--selected"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      if (!isOtherSelected()) {
+                        props.onValueChange(bucket, "");
+                      }
+                    }}
+                    disabled={props.loading}
+                    type="button"
+                  >
+                    other
+                  </button>
+                </div>
+                <Show when={isOtherSelected()}>
+                  <div class="categorize-card__other-input">
+                    <input
+                      type="text"
+                      class="categorize-card__input"
+                      placeholder={`Enter custom ${bucket}...`}
+                      value={props.currentValues[bucket] || ""}
+                      onInput={(e) =>
+                        props.onValueChange(bucket, e.currentTarget.value)
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          props.onSubmit();
+                        }
+                      }}
+                      disabled={props.loading}
+                      autocomplete="off"
+                      autofocus
+                    />
+                  </div>
+                </Show>
               </div>
-            </div>
-          )}
+            );
+          }}
         </For>
       </div>
 
@@ -130,7 +168,7 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
           onClick={props.onSkip}
           disabled={props.loading}
         >
-          Skip <span class="btn-badge">S</span>
+          Skip <span class="btn-badge">X</span>
         </button>
       </div>
     </div>
