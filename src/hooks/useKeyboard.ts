@@ -11,6 +11,7 @@ export interface KeyboardHandlers {
   onSeekBackward?: () => void;
   onSubmit?: () => void;
   onAlbumMode?: () => void;
+  onNumberKey?: (number: number) => void;
 }
 
 /**
@@ -109,6 +110,19 @@ export function useKeyboard(handlers: KeyboardHandlers) {
       case "arrowright":
         e.preventDefault();
         handlers.onSeekForward?.();
+        break;
+      case "0":
+      case "1":
+      case "2":
+      case "3":
+      case "4":
+      case "5":
+      case "6":
+      case "7":
+      case "8":
+      case "9":
+        e.preventDefault();
+        handlers.onNumberKey?.(parseInt(key));
         break;
     }
   };

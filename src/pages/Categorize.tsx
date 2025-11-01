@@ -257,14 +257,40 @@ export const Categorize = () => {
     setAlbumMode(enabled);
   };
 
+  const handleNumberKey = (number: number) => {
+    // Apply number key selection to each bucket
+    // For each bucket, if it has an option at this index, select it
+    for (const bucket of categorizeStore.activeBuckets) {
+      const values = categorizeStore.bucketValues[bucket] || [];
+      // number 0 selects "other", numbers 1-9 select by index (subtract 1 for 0-based indexing)
+      if (number === 0) {
+        // 0 selects "other" - set to empty string to trigger the "other" input
+        setCurrentValue(bucket, "");
+      } else if (number - 1 < values.length) {
+        // 1-9 selects by index
+        setCurrentValue(bucket, values[number - 1]);
+      }
+    }
+  };
+
   // Keyboard shortcuts via RxJS streams
-  useKeyboardAction({
+  useKeyboardAction<CategorizeAction>({
     keymap: categorizeKeybindings,
     handlers: {
       SUBMIT: () => void submitCategorization(),
       SKIP: () => void handleSkip(),
       QUIT: handleQuit,
       TOGGLE_ALBUM_MODE: () => setAlbumMode(!categorizeStore.albumMode),
+      NUMBER_KEY: (action) => {
+        // Extract the number from the key that triggered the action
+        if (typeof action === "object" && action !== null && "key" in action) {
+          const key = (action as { key: string }).key;
+          const number = parseInt(key, 10);
+          if (!isNaN(number)) {
+            handleNumberKey(number);
+          }
+        }
+      },
     },
     // Only allow TOGGLE_ALBUM_MODE context when in active session
     contextCheck: (context) =>

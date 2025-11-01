@@ -91,7 +91,7 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
                 <label class="categorize-card__input-label">{bucket}</label>
                 <div class="categorize-card__button-group">
                   <For each={props.bucketValues[bucket] || []}>
-                    {(value) => (
+                    {(value, index) => (
                       <button
                         class={`categorize-card__option-btn ${
                           props.currentValues[bucket] === value
@@ -101,8 +101,12 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
                         onClick={() => props.onValueChange(bucket, value)}
                         disabled={props.loading}
                         type="button"
+                        title={`${value} (${index() + 1})`}
                       >
                         {value}
+                        <Show when={index() < 9}>
+                          <span class="btn-badge">{index() + 1}</span>
+                        </Show>
                       </button>
                     )}
                   </For>
@@ -119,8 +123,10 @@ export const CategorizeCard = (props: CategorizeCardProps) => {
                     }}
                     disabled={props.loading}
                     type="button"
+                    title="other (0)"
                   >
                     other
+                    <span class="btn-badge">0</span>
                   </button>
                 </div>
                 <Show when={isOtherSelected()}>
