@@ -4,6 +4,7 @@ import { render, screen } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 
 import { AudioProgress } from "./AudioProgress";
+import { expectElement, expectClass } from "@/lib/test-utils";
 
 describe("AudioProgress Component", () => {
   it("should render current time", () => {
@@ -95,17 +96,10 @@ describe("AudioProgress Component", () => {
       <AudioProgress currentTime={30} duration={100} />
     ));
 
-    const audioProgress = container.querySelector(".audio-progress");
-    expect(audioProgress).toBeDefined();
-
-    const timeElement = container.querySelector(".audio-progress__time");
-    expect(timeElement).toBeDefined();
-
-    const separator = container.querySelector(".audio-progress__separator");
-    expect(separator).toBeDefined();
-
-    const durationElement = container.querySelector(".audio-progress__duration");
-    expect(durationElement).toBeDefined();
+    expectElement(container, ".audio-progress");
+    expectElement(container, ".audio-progress__time");
+    expectElement(container, ".audio-progress__separator");
+    expectElement(container, ".audio-progress__duration");
   });
 
   it("should update when props change", () => {

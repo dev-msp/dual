@@ -4,9 +4,10 @@ import { render, screen } from "@solidjs/testing-library";
 import userEvent from "@testing-library/user-event";
 
 import { BucketSelector, type BucketSelectorProps } from "./BucketSelector";
+import { createPropsFactory, expectElement, expectClass } from "@/lib/test-utils";
 
 describe("BucketSelector Component", () => {
-  const createProps = (overrides?: Partial<BucketSelectorProps>): BucketSelectorProps => ({
+  const createProps = createPropsFactory<BucketSelectorProps>({
     availableBuckets: [],
     activeBuckets: [],
     loading: false,
@@ -14,7 +15,6 @@ describe("BucketSelector Component", () => {
     onActiveBucketsChange: vi.fn(),
     onNewBucket: vi.fn(),
     onStart: vi.fn(),
-    ...overrides,
   });
 
   it("should render component with title", () => {
@@ -29,14 +29,6 @@ describe("BucketSelector Component", () => {
     render(() => <BucketSelector {...props} />);
 
     expect(screen.getByText("Something went wrong")).toBeDefined();
-  });
-
-  it("should have alert role on error", () => {
-    const props = createProps({ error: "Error message" });
-    const { container } = render(() => <BucketSelector {...props} />);
-
-    const errorDiv = container.querySelector('[role="alert"]');
-    expect(errorDiv).toBeDefined();
   });
 
   it("should show empty message when no buckets available", () => {
@@ -65,6 +57,13 @@ describe("BucketSelector Component", () => {
 
     const checkboxes = container.querySelectorAll(".bucket-selector__bucket-checkbox");
     expect(checkboxes.length).toBe(2);
+  });
+
+  it("should have alert role on error", () => {
+    const props = createProps({ error: "Error message" });
+    const { container } = render(() => <BucketSelector {...props} />);
+
+    expectElement(container, '[role="alert"]');
   });
 
   it("should check checkbox when bucket is active", () => {

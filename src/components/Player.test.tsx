@@ -4,6 +4,7 @@ import { render, screen } from "@solidjs/testing-library";
 import userEvent from "@testing-library/user-event";
 
 import { Player } from "./Player";
+import { expectElement, expectAttribute } from "@/lib/test-utils";
 
 describe("Player Component", () => {
   it("should render player div with correct ID", () => {
@@ -155,8 +156,8 @@ describe("Player Component", () => {
       <Player ref={mockRef} onPlayPause={mockPlayPause} />
     ));
 
-    const svg = container.querySelector("svg");
-    expect(svg?.getAttribute("viewBox")).toBe("0 0 100 100");
+    const svg = expectElement(container, "svg");
+    expectAttribute(svg, "viewBox", "0 0 100 100");
   });
 
   it("should render circle in SVG", () => {
@@ -167,11 +168,10 @@ describe("Player Component", () => {
       <Player ref={mockRef} onPlayPause={mockPlayPause} />
     ));
 
-    const circle = container.querySelector("circle");
-    expect(circle).toBeDefined();
-    expect(circle?.getAttribute("cx")).toBe("50");
-    expect(circle?.getAttribute("cy")).toBe("50");
-    expect(circle?.getAttribute("r")).toBe("48");
+    const circle = expectElement(container, "circle");
+    expectAttribute(circle, "cx", "50");
+    expectAttribute(circle, "cy", "50");
+    expectAttribute(circle, "r", "48");
   });
 
   it("should have SVG with proper namespace", () => {
@@ -182,8 +182,8 @@ describe("Player Component", () => {
       <Player ref={mockRef} onPlayPause={mockPlayPause} />
     ));
 
-    const svg = container.querySelector("svg");
-    expect(svg?.getAttribute("xmlns")).toBe("http://www.w3.org/2000/svg");
+    const svg = expectElement(container, "svg");
+    expectAttribute(svg, "xmlns", "http://www.w3.org/2000/svg");
   });
 
   it("should have SVG with tabindex", () => {
@@ -194,7 +194,7 @@ describe("Player Component", () => {
       <Player ref={mockRef} onPlayPause={mockPlayPause} />
     ));
 
-    const svg = container.querySelector("svg");
-    expect(svg?.getAttribute("tabindex")).toBe("1");
+    const svg = expectElement(container, "svg");
+    expectAttribute(svg, "tabindex", "1");
   });
 });

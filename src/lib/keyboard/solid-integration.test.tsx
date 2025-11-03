@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 /// <reference lib="dom" />
 import { createSignal } from "solid-js";
-import { render, screen, cleanup } from "@solidjs/testing-library";
+import { render, screen } from "@solidjs/testing-library";
 import userEvent from "@testing-library/user-event";
 
 import { useKeyboardAction, type ActionHandlers } from "./solid-integration";
+import { setupCleanup, setupMockClearing } from "@/lib/test-utils";
 
 /**
  * Test component for useKeyboardAction hook
@@ -48,14 +49,8 @@ function createTestKeymap() {
 }
 
 describe("useKeyboardAction hook", () => {
-  beforeEach(() => {
-    // Setup before each test
-  });
-
-  afterEach(() => {
-    cleanup();
-    vi.clearAllMocks();
-  });
+  setupCleanup();
+  setupMockClearing();
 
   it("should initialize without errors", () => {
     const keymap = createTestKeymap();

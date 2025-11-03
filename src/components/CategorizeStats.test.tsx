@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@solidjs/testing-library";
 
 import { CategorizeStats, type CategorizeStatsProps } from "./CategorizeStats";
+import { expectElement, expectElementCount } from "@/lib/test-utils";
 
 describe("CategorizeStats Component", () => {
   it("should render categorize-stats container", () => {
@@ -116,8 +117,7 @@ describe("CategorizeStats Component", () => {
 
     const { container } = render(() => <CategorizeStats {...props} />);
 
-    const items = container.querySelectorAll(".categorize-stats__item");
-    expect(items.length).toBe(3);
+    expectElementCount(container, ".categorize-stats__item", 3);
   });
 
   it("should have proper CSS classes for labels", () => {
@@ -128,8 +128,7 @@ describe("CategorizeStats Component", () => {
 
     const { container } = render(() => <CategorizeStats {...props} />);
 
-    const labels = container.querySelectorAll(".categorize-stats__label");
-    expect(labels.length).toBe(3);
+    expectElementCount(container, ".categorize-stats__label", 3);
   });
 
   it("should have proper CSS classes for values", () => {
@@ -140,8 +139,7 @@ describe("CategorizeStats Component", () => {
 
     const { container } = render(() => <CategorizeStats {...props} />);
 
-    const values = container.querySelectorAll(".categorize-stats__value");
-    expect(values.length).toBe(3);
+    expectElementCount(container, ".categorize-stats__value", 3);
   });
 
   it("should display dividers between items", () => {

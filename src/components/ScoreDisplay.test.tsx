@@ -1,32 +1,15 @@
 /// <reference lib="dom" />
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, cleanup } from "@solidjs/testing-library";
+import { describe, it, expect, vi } from "vitest";
+import { render, screen } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
 
 import { ScoreDisplay, type ScoreUpdateInfo } from "./ScoreDisplay";
+import { setupFakeTimers, createScoreInfoFactory, expectElement, expectClass } from "@/lib/test-utils";
 
 describe("ScoreDisplay Component", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
+  setupFakeTimers();
 
-  afterEach(() => {
-    cleanup();
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
-  });
-
-  const createMockScoreInfo = (overrides?: Partial<ScoreUpdateInfo>): ScoreUpdateInfo => ({
-    side: "A" as const,
-    oldRating: 1500,
-    newRating: 1520,
-    change: 20,
-    rd: 30,
-    volatility: 0.08,
-    conservativeRating: 1490,
-    confidence: 0.75,
-    ...overrides,
-  });
+  const createMockScoreInfo = createScoreInfoFactory();
 
   it("should render when visible", () => {
     const onComplete = vi.fn();
@@ -197,8 +180,7 @@ describe("ScoreDisplay Component", () => {
       <ScoreDisplay trackA={trackA} trackB={null} onComplete={onComplete} />
     ));
 
-    const changeDiv = container.querySelector(".score-display__change--increase");
-    expect(changeDiv).toBeDefined();
+    expectElement(container, ".score-display__change--increase");
   });
 
   it("should apply correct CSS class for decrease", () => {
@@ -209,8 +191,7 @@ describe("ScoreDisplay Component", () => {
       <ScoreDisplay trackA={trackA} trackB={null} onComplete={onComplete} />
     ));
 
-    const changeDiv = container.querySelector(".score-display__change--decrease");
-    expect(changeDiv).toBeDefined();
+    expectElement(container, ".score-display__change--decrease");
   });
 
   it("should apply correct CSS class for neutral", () => {
@@ -221,8 +202,7 @@ describe("ScoreDisplay Component", () => {
       <ScoreDisplay trackA={trackA} trackB={null} onComplete={onComplete} />
     ));
 
-    const changeDiv = container.querySelector(".score-display__change--neutral");
-    expect(changeDiv).toBeDefined();
+    expectElement(container, ".score-display__change--neutral");
   });
 
   it("should call onComplete after default auto-advance time", () => {
@@ -271,8 +251,7 @@ describe("ScoreDisplay Component", () => {
       <ScoreDisplay trackA={trackA} trackB={null} onComplete={onComplete} />
     ));
 
-    const confidenceDiv = container.querySelector(".score-display__confidence--high");
-    expect(confidenceDiv).toBeDefined();
+    expectElement(container, ".score-display__confidence--high");
   });
 
   it("should apply medium confidence CSS class", () => {
@@ -283,8 +262,7 @@ describe("ScoreDisplay Component", () => {
       <ScoreDisplay trackA={trackA} trackB={null} onComplete={onComplete} />
     ));
 
-    const confidenceDiv = container.querySelector(".score-display__confidence--medium");
-    expect(confidenceDiv).toBeDefined();
+    expectElement(container, ".score-display__confidence--medium");
   });
 
   it("should apply low confidence CSS class", () => {
@@ -295,8 +273,7 @@ describe("ScoreDisplay Component", () => {
       <ScoreDisplay trackA={trackA} trackB={null} onComplete={onComplete} />
     ));
 
-    const confidenceDiv = container.querySelector(".score-display__confidence--low");
-    expect(confidenceDiv).toBeDefined();
+    expectElement(container, ".score-display__confidence--low");
   });
 
   it("should display hint text", () => {

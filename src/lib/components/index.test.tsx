@@ -4,6 +4,7 @@ import { render, screen } from "@solidjs/testing-library";
 import { mergeProps } from "solid-js";
 
 import { propsOverride } from "./index";
+import { expectElement, expectClass } from "@/lib/test-utils";
 
 describe("propsOverride utility", () => {
   it("should create a component that applies static prop overrides", () => {
@@ -45,7 +46,7 @@ describe("propsOverride utility", () => {
       </StyledDiv>
     ));
 
-    const element = container.querySelector('[data-testid="styled-div"]');
+    const element = expectElement(container, '[data-testid="styled-div"]');
     expect(element?.id).toBe("my-id");
   });
 
@@ -76,8 +77,8 @@ describe("propsOverride utility", () => {
       </StyledDiv>
     ));
 
+    expectElement(container, '[title="Tooltip"]');
     const element = container.querySelector('[title="Tooltip"]');
-    expect(element).toBeDefined();
     expect(element?.getAttribute("aria-label")).toBe("Label");
   });
 
@@ -92,7 +93,7 @@ describe("propsOverride utility", () => {
 
     const nested = screen.getByText("Nested");
     expect(nested).toBeDefined();
-    expect(nested.parentElement?.classList.contains("container")).toBe(true);
+    expectClass(nested.parentElement, "container");
   });
 
   it("should work with dynamic class in function override", () => {
