@@ -20,7 +20,7 @@ import type { KeymapConfig } from "./index";
  * ← - Seek backward 10 seconds
  * → - Seek forward 10 seconds
  */
-export const reviewKeybindings: KeymapConfig = fromKvMapping({
+export const reviewKeybindings = fromKvMapping({
   a: {
     action: "SELECT_A",
     preventDefault: true,
@@ -53,7 +53,7 @@ export const reviewKeybindings: KeymapConfig = fromKvMapping({
     action: "SEEK_FORWARD",
     preventDefault: true,
   },
-});
+} as const);
 
 /**
  * Categorize page keybindings
@@ -65,7 +65,7 @@ export const reviewKeybindings: KeymapConfig = fromKvMapping({
  * Q - Quit/return to home
  * 1-9, 0, a, s, d, f, g, h, j, k, l - Quick select category option
  */
-export const categorizeKeybindings: KeymapConfig = fromKvMapping({
+export const categorizeKeybindings = fromKvMapping({
   enter: {
     action: "SUBMIT",
     preventDefault: true,
@@ -150,7 +150,7 @@ export const categorizeKeybindings: KeymapConfig = fromKvMapping({
     action: "SELECTION_KEY",
     preventDefault: true,
   },
-});
+} as const);
 
 /**
  * Compose multiple keymaps
@@ -170,8 +170,15 @@ export function composeKeymaps(...keymaps: KeymapConfig[]): KeymapConfig {
     }, undefined as ReturnType<KeymapConfig>);
 }
 
-function fromKvMapping<K extends string, V>(
-  obj: Record<K, V>,
-): (key: string) => V | undefined {
-  return (key: string) => obj[key as K];
+function fromKvMapping<
+  T extends Readonly<
+    Record<
+      string,
+      Readonly<{ action: string; context?: string; preventDefault?: boolean }>
+    >
+  >,
+>(
+  obj: T,
+): (key: string) => T[keyof T] | undefined {
+  return (key: string) => obj[key] as T[keyof T] | undefined;
 }

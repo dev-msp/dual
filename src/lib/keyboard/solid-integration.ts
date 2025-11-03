@@ -20,7 +20,7 @@ import {
 /**
  * Handler for a specific keyboard action
  */
-export type ActionHandler = (action: unknown) => void | Promise<void>;
+export type ActionHandler<T = unknown> = (action: T) => void | Promise<void>;
 
 /**
  * Handlers map: action type → handler function
@@ -30,11 +30,22 @@ export interface ActionHandlers {
 }
 
 /**
+ * Type-safe keymap that ensures actions match handler keys
+ */
+export type TypedKeymap<T extends ActionHandlers> = (key: string) =>
+  | {
+      action: keyof T;
+      context?: string;
+      preventDefault?: boolean;
+    }
+  | undefined;
+
+/**
  * Configuration for useKeyboardAction hook
  */
-export interface UseKeyboardActionConfig {
-  keymap: KeymapConfig;
-  handlers: ActionHandlers;
+export interface UseKeyboardActionConfig<T extends ActionHandlers> {
+  keymap: TypedKeymap<T>;
+  handlers: T;
   skipFormElements?: boolean;
   contextCheck?: (context: string | undefined) => boolean;
   enabled?: () => boolean; // Optional predicate to enable/disable
@@ -57,7 +68,9 @@ export interface UseKeyboardActionConfig {
  *
  * useKeyboardAction({ keymap: reviewKeymap, handlers });
  */
-export function useKeyboardAction(config: UseKeyboardActionConfig): void {
+export function useKeyboardAction<T extends ActionHandlers>(
+  config: UseKeyboardActionConfig<T>,
+): void {
   const {
     keymap,
     handlers,
@@ -70,8 +83,9 @@ export function useKeyboardAction(config: UseKeyboardActionConfig): void {
   const keyboard$ = createKeyboardSource();
 
   // Create action streams from keymap
+  // Cast to KeymapConfig since createActionStreams expects the base type
   const actionStreams = createActionStreams({
-    keymap,
+    keymap: keymap as KeymapConfig,
     skipFormElements,
     keyboardEvent$: keyboard$,
     contextCheck,
