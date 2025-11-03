@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "bun test",
-    "test:watch": "bun test --watch"
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@picocss/pico": "^2.1.1",
@@ -28,6 +29,8 @@
     "@eslint/eslintrc": "^3.3.0",
     "@eslint/js": "^9.22.0",
     "@solid-devtools/overlay": "^0.33.1",
+    "@solidjs/testing-library": "^0.8.10",
+    "@testing-library/user-event": "^14.6.1",
     "@types/bun": "^1.2.18",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.22.0",
@@ -38,6 +41,7 @@
     "eslint-plugin-solid": "^0.14.5",
     "eslint-plugin-unused-imports": "^4.1.4",
     "globals": "^16.0.0",
+    "jsdom": "^27.1.0",
     "postcss": "^8.5.3",
     "prettier": "^3.6.2",
     "stylelint": "^16.22.0",
@@ -46,7 +50,8 @@
     "stylelint-scss": "^6.12.1",
     "typescript-eslint": "^8.26.1",
     "vite": "^6.2.2",
-    "vite-plugin-solid": "^2.11.6"
+    "vite-plugin-solid": "^2.11.6",
+    "vitest": "^4.0.6"
   },
   "trustedDependencies": [
     "sharp",
