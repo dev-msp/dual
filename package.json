@@ -32,6 +32,7 @@
     "@solidjs/testing-library": "^0.8.10",
     "@testing-library/user-event": "^14.6.1",
     "@types/bun": "^1.2.18",
+    "@vitest/ui": "4.0.6",
     "autoprefixer": "^10.4.21",
     "eslint": "^9.22.0",
     "eslint-config-prettier": "^10.1.1",
