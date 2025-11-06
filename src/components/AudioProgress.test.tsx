@@ -1,10 +1,11 @@
 /// <reference lib="dom" />
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@solidjs/testing-library";
 import { createSignal } from "solid-js";
+import { describe, it, expect } from "vitest";
+
+import { expectElement } from "@/lib/test-utils";
 
 import { AudioProgress } from "./AudioProgress";
-import { expectElement, expectClass } from "@/lib/test-utils";
 
 describe("AudioProgress Component", () => {
   it("should render current time", () => {
@@ -25,7 +26,7 @@ describe("AudioProgress Component", () => {
   });
 
   it("should render separator when duration is provided", () => {
-    const { container } = render(() => (
+    render(() => (
       <AudioProgress currentTime={0} duration={100} />
     ));
 

@@ -3,8 +3,8 @@
  * Reduces repetitive beforeEach/afterEach boilerplate
  */
 
-import { beforeEach, afterEach, vi } from "vitest";
 import { cleanup } from "@solidjs/testing-library";
+import { beforeEach, afterEach, vi } from "vitest";
 
 /**
  * Setup fake timers for all tests in a describe block

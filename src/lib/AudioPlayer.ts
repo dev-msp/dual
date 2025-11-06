@@ -19,8 +19,9 @@ export class AudioPlayer {
   private onEnded?: () => void;
 
   constructor() {
-    this.audioContext = new (window.AudioContext ||
-      (window as any).webkitAudioContext)();
+    const AudioContextClass = window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    this.audioContext = new AudioContextClass();
   }
 
   // ============ Public API ============
@@ -238,7 +239,7 @@ export class AudioPlayer {
       try {
         this.currentSource.stop();
         this.currentSource.disconnect();
-      } catch (e) {
+      } catch {
         // source might already be stopped
       }
       this.currentSource = null;

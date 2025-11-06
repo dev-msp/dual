@@ -1,9 +1,10 @@
 /// <reference lib="dom" />
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@solidjs/testing-library";
+import { describe, it, expect } from "vitest";
+
+import { expectElementCount } from "@/lib/test-utils";
 
 import { CategorizeStats, type CategorizeStatsProps } from "./CategorizeStats";
-import { expectElement, expectElementCount } from "@/lib/test-utils";
 
 describe("CategorizeStats Component", () => {
   it("should render categorize-stats container", () => {
@@ -179,14 +180,14 @@ describe("CategorizeStats Component", () => {
   });
 
   it("should update when stats prop changes", () => {
-    const [stats, setStats] = [{ categorized: 5, remaining: 95 }, () => {}];
+    const stats = { categorized: 5, remaining: 95 };
 
     const props: CategorizeStatsProps = {
       stats: stats,
       activeBuckets: ["bucket1"],
     };
 
-    const { container } = render(() => <CategorizeStats {...props} />);
+    render(() => <CategorizeStats {...props} />);
 
     const categorizedValue = screen.getByText("5");
     expect(categorizedValue).toBeDefined();

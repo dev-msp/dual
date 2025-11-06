@@ -63,7 +63,7 @@ const OrderOption = (props: {
       class="option"
       onKeyPress={(e) => {
         if (e.target === document.activeElement && e.key === " ") {
-          props.onClick(e as any, props.value);
+          props.onClick(e as unknown as MouseEvent, props.value);
         }
       }}
       onClick={(e) => props.onClick(e, props.value)}

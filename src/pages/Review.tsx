@@ -9,10 +9,9 @@ import { ComparisonCard } from "../components/ComparisonCard";
 import { ControlBand } from "../components/ControlBand";
 import { ScoreDisplay, type ScoreUpdateInfo } from "../components/ScoreDisplay";
 import { useReviewAudio } from "../hooks/useReviewAudio";
-import { filterMap } from "../lib/reactive";
-import { useKeyboardAction } from "../lib/keyboard/solid-integration";
 import { reviewKeybindings } from "../lib/keyboard/keymaps";
-import type { ReviewAction } from "../lib/keyboard/actions";
+import { useKeyboardAction } from "../lib/keyboard/solid-integration";
+import { filterMap } from "../lib/reactive";
 import {
   reviewStore,
   setCurrentPair,

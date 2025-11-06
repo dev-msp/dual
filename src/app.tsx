@@ -107,14 +107,14 @@ export const App = () => {
 
   // Set up audio player for track playback
   const player = new AudioPlayer();
-  const [isPlaying, setIsPlaying] = createSignal(false);
+  const [_isPlaying, setIsPlaying] = createSignal(false);
 
   // Wire up player callbacks to SolidJS signals
   player.setOnPlayingChanged(setIsPlaying);
 
   // Handle track double-click from TrackList
-  const handlePlayTrack = async (track: Track) => {
-    await player.play(track.id);
+  const handlePlayTrack = (track: Track) => {
+    void player.play(track.id);
   };
 
   onCleanup(() => {

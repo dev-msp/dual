@@ -1,10 +1,10 @@
 /// <reference lib="dom" />
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@solidjs/testing-library";
-import { createSignal } from "solid-js";
+import { describe, it, expect, vi } from "vitest";
 
-import { ScoreDisplay, type ScoreUpdateInfo } from "./ScoreDisplay";
-import { setupFakeTimers, createScoreInfoFactory, expectElement, expectClass } from "@/lib/test-utils";
+import { setupFakeTimers, createScoreInfoFactory, expectElement } from "@/lib/test-utils";
+
+import { ScoreDisplay } from "./ScoreDisplay";
 
 describe("ScoreDisplay Component", () => {
   setupFakeTimers();

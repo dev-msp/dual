@@ -1,18 +1,19 @@
-import { describe, it, expect, vi } from "vitest";
 /// <reference lib="dom" />
-import { createSignal } from "solid-js";
 import { render, screen } from "@solidjs/testing-library";
 import userEvent from "@testing-library/user-event";
+import { createSignal } from "solid-js";
+import { describe, it, expect, vi } from "vitest";
+
+import { setupCleanup, setupMockClearing } from "@/lib/test-utils";
 
 import { useKeyboardAction, type ActionHandlers } from "./solid-integration";
-import { setupCleanup, setupMockClearing } from "@/lib/test-utils";
 
 /**
  * Test component for useKeyboardAction hook
  */
 function TestKeyboardComponent(props: {
   handlers: ActionHandlers;
-  keymap: (key: string) => any;
+  keymap: (key: string) => Record<string, unknown> | undefined;
   enabled?: () => boolean;
   skipFormElements?: boolean;
   contextCheck?: (context: string | undefined) => boolean;
@@ -37,8 +38,8 @@ function TestKeyboardComponent(props: {
  * Simple test keymap
  */
 function createTestKeymap() {
-  return (key: string) => {
-    const mapping: Record<string, any> = {
+  return (key: string): Record<string, unknown> | undefined => {
+    const mapping: Record<string, Record<string, unknown>> = {
       a: { action: "ACTION_A", preventDefault: true },
       b: { action: "ACTION_B", preventDefault: true },
       q: { action: "QUIT", preventDefault: true },
@@ -105,8 +106,8 @@ describe("useKeyboardAction hook", () => {
     const handlerA = vi.fn();
     const handlerB = vi.fn();
 
-    const keymap = (key: string) => {
-      const mapping: Record<string, any> = {
+    const keymap = (key: string): Record<string, unknown> | undefined => {
+      const mapping: Record<string, Record<string, unknown>> = {
         a: { action: "ACTION_A", preventDefault: true },
         b: { action: "ACTION_B", preventDefault: true },
       };
@@ -171,7 +172,7 @@ describe("useKeyboardAction hook", () => {
 
   it("should handle enabled predicate - enabled", async () => {
     const actionHandler = vi.fn();
-    const [enabled, setEnabled] = createSignal(true);
+    const [enabled, _setEnabled] = createSignal(true);
 
     const keymap = (key: string) => {
       if (key === "a") {
@@ -205,7 +206,7 @@ describe("useKeyboardAction hook", () => {
 
   it("should handle enabled predicate - disabled", async () => {
     const actionHandler = vi.fn();
-    const [enabled, setEnabled] = createSignal(false);
+    const [enabled, _setEnabled] = createSignal(false);
 
     const keymap = (key: string) => {
       if (key === "a") {
@@ -267,7 +268,7 @@ describe("useKeyboardAction hook", () => {
     expect(actionHandler).toBeDefined();
   });
 
-  it("should clean up subscriptions on unmount", async () => {
+  it("should clean up subscriptions on unmount", () => {
     const actionHandler = vi.fn();
 
     const keymap = (key: string) => {
@@ -292,7 +293,7 @@ describe("useKeyboardAction hook", () => {
   });
 
   it("should handle preventDefault binding", async () => {
-    let preventDefaultCalled = false;
+    const _preventDefaultCalled = false;
 
     const keymap = (key: string) => {
       if (key === "a") {
@@ -320,7 +321,7 @@ describe("useKeyboardAction hook", () => {
     expect(handlers.ACTION_A).toBeDefined();
   });
 
-  it("should handle context in keymap", async () => {
+  it("should handle context in keymap", () => {
     const actionHandler = vi.fn();
 
     const keymap = (key: string) => {
@@ -356,7 +357,7 @@ describe("useKeyboardAction hook", () => {
     expect(contextCheck).toBeDefined();
   });
 
-  it("should handle multiple action types", async () => {
+  it("should handle multiple action types", () => {
     const handlers = {
       SELECT_A: vi.fn(),
       SELECT_B: vi.fn(),
@@ -365,8 +366,8 @@ describe("useKeyboardAction hook", () => {
       QUIT: vi.fn(),
     };
 
-    const keymap = (key: string) => {
-      const mapping: Record<string, any> = {
+    const keymap = (key: string): Record<string, unknown> | undefined => {
+      const mapping: Record<string, Record<string, unknown>> = {
         a: { action: "SELECT_A" },
         b: { action: "SELECT_B" },
         d: { action: "DRAW" },

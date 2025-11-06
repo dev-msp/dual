@@ -1,10 +1,11 @@
 /// <reference lib="dom" />
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@solidjs/testing-library";
 import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { createPropsFactory, expectElement } from "@/lib/test-utils";
 
 import { BucketSelector, type BucketSelectorProps } from "./BucketSelector";
-import { createPropsFactory, expectElement, expectClass } from "@/lib/test-utils";
 
 describe("BucketSelector Component", () => {
   const createProps = createPropsFactory<BucketSelectorProps>({
@@ -75,7 +76,7 @@ describe("BucketSelector Component", () => {
 
     const checkboxes = container.querySelectorAll(
       ".bucket-selector__bucket-checkbox"
-    ) as NodeListOf<HTMLInputElement>;
+    );
 
     expect(checkboxes[0].checked).toBe(true);
     expect(checkboxes[1].checked).toBe(false);
@@ -113,7 +114,7 @@ describe("BucketSelector Component", () => {
 
     await userEvent.click(checkbox);
 
-    const callArgs = onActiveBucketsChange.mock.calls[0][0];
+    const callArgs = onActiveBucketsChange.mock.calls[0]?.[0] as string[];
     expect(callArgs).toContain("bucket1");
   });
 
@@ -132,7 +133,7 @@ describe("BucketSelector Component", () => {
 
     await userEvent.click(checkbox);
 
-    const callArgs = onActiveBucketsChange.mock.calls[0][0];
+    const callArgs = onActiveBucketsChange.mock.calls[0]?.[0] as string[];
     expect(callArgs).not.toContain("bucket1");
   });
 
@@ -164,7 +165,7 @@ describe("BucketSelector Component", () => {
     const { container } = render(() => <BucketSelector {...props} />);
 
     const input = container.querySelector(".bucket-selector__input") as HTMLInputElement;
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
 
     await userEvent.type(input, "new-bucket");
     await userEvent.click(button);
@@ -190,7 +191,7 @@ describe("BucketSelector Component", () => {
     const { container } = render(() => <BucketSelector {...props} />);
 
     const input = container.querySelector(".bucket-selector__input") as HTMLInputElement;
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
 
     await userEvent.type(input, "new-bucket");
     await userEvent.click(button);
@@ -198,12 +199,12 @@ describe("BucketSelector Component", () => {
     expect(input.value).toBe("");
   });
 
-  it("should not add bucket with empty/whitespace-only name", async () => {
+  it("should not add bucket with empty/whitespace-only name", () => {
     const onNewBucket = vi.fn();
     const props = createProps({ onNewBucket });
-    const { container } = render(() => <BucketSelector {...props} />);
+    render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
 
     // Add Bucket button should be disabled initially
     expect(button.disabled).toBe(true);
@@ -213,9 +214,9 @@ describe("BucketSelector Component", () => {
 
   it("should disable Add Bucket button when input is empty", () => {
     const props = createProps();
-    const { container } = render(() => <BucketSelector {...props} />);
+    render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
     expect(button.disabled).toBe(true);
   });
 
@@ -224,7 +225,7 @@ describe("BucketSelector Component", () => {
     const { container } = render(() => <BucketSelector {...props} />);
 
     const input = container.querySelector(".bucket-selector__input") as HTMLInputElement;
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
 
     await userEvent.type(input, "bucket");
 
@@ -240,17 +241,17 @@ describe("BucketSelector Component", () => {
 
   it("should disable Start Categorizing button when no buckets are active", () => {
     const props = createProps({ activeBuckets: [] });
-    const { container } = render(() => <BucketSelector {...props} />);
+    render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Start Categorizing") as HTMLButtonElement;
+    const button = screen.getByText("Start Categorizing");
     expect(button.disabled).toBe(true);
   });
 
   it("should enable Start Categorizing button when buckets are active", () => {
     const props = createProps({ activeBuckets: ["bucket1"] });
-    const { container } = render(() => <BucketSelector {...props} />);
+    render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Start Categorizing") as HTMLButtonElement;
+    const button = screen.getByText("Start Categorizing");
     expect(button.disabled).toBe(false);
   });
 
@@ -260,7 +261,7 @@ describe("BucketSelector Component", () => {
 
     render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Start Categorizing") as HTMLButtonElement;
+    const button = screen.getByText("Start Categorizing");
     await userEvent.click(button);
 
     expect(onStart).toHaveBeenCalled();
@@ -304,9 +305,9 @@ describe("BucketSelector Component", () => {
       activeBuckets: ["bucket1"],
     });
 
-    const { container } = render(() => <BucketSelector {...props} />);
+    render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
     expect(button.disabled).toBe(true);
   });
 
@@ -315,7 +316,7 @@ describe("BucketSelector Component", () => {
 
     render(() => <BucketSelector {...props} />);
 
-    const button = screen.getByText("Loading...") as HTMLButtonElement;
+    const button = screen.getByText("Loading...");
     expect(button.disabled).toBe(true);
   });
 
@@ -328,7 +329,7 @@ describe("BucketSelector Component", () => {
     const { container } = render(() => <BucketSelector {...props} />);
 
     const input = container.querySelector(".bucket-selector__input") as HTMLInputElement;
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
 
     await userEvent.type(input, "existing");
     await userEvent.click(button);
@@ -342,7 +343,7 @@ describe("BucketSelector Component", () => {
     const { container } = render(() => <BucketSelector {...props} />);
 
     const input = container.querySelector(".bucket-selector__input") as HTMLInputElement;
-    const button = screen.getByText("Add Bucket") as HTMLButtonElement;
+    const button = screen.getByText("Add Bucket");
 
     await userEvent.type(input, "  new-bucket  ");
     await userEvent.click(button);
@@ -369,12 +370,12 @@ describe("BucketSelector Component", () => {
 
     const checkboxes = container.querySelectorAll(
       ".bucket-selector__bucket-checkbox"
-    ) as NodeListOf<HTMLInputElement>;
+    );
 
     // Click the third checkbox to add it
     await userEvent.click(checkboxes[2]);
 
-    const callArgs = onActiveBucketsChange.mock.calls[0][0];
+    const callArgs = onActiveBucketsChange.mock.calls[0]?.[0] as string[];
     expect(callArgs).toContain("bucket1");
     expect(callArgs).toContain("bucket2");
     expect(callArgs).toContain("bucket3");

@@ -1,10 +1,10 @@
 /// <reference lib="dom" />
-import { describe, it, expect } from "vitest";
 import { render, screen } from "@solidjs/testing-library";
-import { mergeProps } from "solid-js";
+import { describe, it, expect } from "vitest";
+
+import { expectElement, expectClass } from "@/lib/test-utils";
 
 import { propsOverride } from "./index";
-import { expectElement, expectClass } from "@/lib/test-utils";
 
 describe("propsOverride utility", () => {
   it("should create a component that applies static prop overrides", () => {
@@ -55,7 +55,7 @@ describe("propsOverride utility", () => {
 
     render(() => <StyledButton>Click me</StyledButton>);
 
-    const button = screen.getByText("Click me") as HTMLButtonElement;
+    const button = screen.getByText("Click me");
     expect(button.tagName).toBe("BUTTON");
   });
 
@@ -64,7 +64,7 @@ describe("propsOverride utility", () => {
 
     render(() => <StyledSpan>Badge</StyledSpan>);
 
-    const span = screen.getByText("Badge") as HTMLSpanElement;
+    const span = screen.getByText("Badge");
     expect(span.tagName).toBe("SPAN");
   });
 
@@ -191,11 +191,12 @@ describe("propsOverride utility", () => {
 
   it("should work with conditional rendering inside", () => {
     const StyledDiv = propsOverride("div", { class: "container" });
+    const showHidden = false;
 
     render(() => (
       <StyledDiv>
-        {true && <span>Visible</span>}
-        {false && <span>Hidden</span>}
+        <span>Visible</span>
+        {showHidden && <span>Hidden</span>}
       </StyledDiv>
     ));
 

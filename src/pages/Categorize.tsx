@@ -5,9 +5,8 @@ import z from "zod";
 import { BucketSelector } from "../components/BucketSelector";
 import { CategorizeCard } from "../components/CategorizeCard";
 import { CategorizeStats } from "../components/CategorizeStats";
-import { useKeyboardAction } from "../lib/keyboard/solid-integration";
 import { categorizeKeybindings } from "../lib/keyboard/keymaps";
-import type { CategorizeAction } from "../lib/keyboard/actions";
+import { useKeyboardAction } from "../lib/keyboard/solid-integration";
 import {
   categorizeStore,
   setAvailableBuckets,
@@ -155,7 +154,10 @@ export const Categorize = () => {
           setError(null);
           // Fetch album track count if track has an album_id or albumHash
           if (parsed.track.album_id) {
-            await fetchAlbumTrackCount(parsed.track.album_id, parsed.track.albumHash || undefined);
+            await fetchAlbumTrackCount(
+              parsed.track.album_id,
+              parsed.track.albumHash || undefined,
+            );
           } else {
             setAlbumTrackCount(null);
           }
@@ -258,7 +260,27 @@ export const Categorize = () => {
   };
 
   // Define the keymap sequence: 1-9, 0, then a-l (homerow)
-  const KEYMAP_SEQUENCE = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "a", "s", "d", "f", "g", "h", "j", "k", "l"];
+  const KEYMAP_SEQUENCE = [
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
+    "7",
+    "8",
+    "9",
+    "0",
+    "a",
+    "s",
+    "d",
+    "f",
+    "g",
+    "h",
+    "j",
+    "k",
+    "l",
+  ];
 
   const handleSelectionKey = (key: string) => {
     const keyIndex = KEYMAP_SEQUENCE.indexOf(key);
@@ -266,7 +288,8 @@ export const Categorize = () => {
 
     // Build a flat list of all options with their bucket associations
     // Excludes "other" buttons as per user preference
-    const allOptions: Array<{ bucket: string; value: string; index: number }> = [];
+    const allOptions: Array<{ bucket: string; value: string; index: number }> =
+      [];
     for (const bucket of categorizeStore.activeBuckets) {
       const values = categorizeStore.bucketValues[bucket] || [];
       for (let i = 0; i < values.length; i++) {

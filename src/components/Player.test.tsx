@@ -1,10 +1,11 @@
 /// <reference lib="dom" />
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@solidjs/testing-library";
+import { render } from "@solidjs/testing-library";
 import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+
+import { expectElement, expectAttribute } from "@/lib/test-utils";
 
 import { Player } from "./Player";
-import { expectElement, expectAttribute } from "@/lib/test-utils";
 
 describe("Player Component", () => {
   it("should render player div with correct ID", () => {
@@ -27,9 +28,9 @@ describe("Player Component", () => {
     render(() => <Player ref={mockRef} onPlayPause={mockPlayPause} />);
 
     expect(mockRef).toHaveBeenCalled();
-    const audioElement = mockRef.mock.calls[0][0];
+    const audioElement = mockRef.mock.calls[0]?.[0] as HTMLElement;
     expect(audioElement).toBeDefined();
-    expect(audioElement.tagName).toBe("AUDIO");
+    expect(audioElement?.tagName).toBe("AUDIO");
   });
 
   it("should render audio element with hidden class", () => {
