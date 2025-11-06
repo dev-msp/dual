@@ -259,8 +259,17 @@ export const Categorize = () => {
     setAlbumMode(enabled);
   };
 
-  // Define the keymap sequence: 1-9, 0, then a-l (homerow)
+  // Define the keymap sequence: a-l (homerow) first, then 1-9, 0
   const KEYMAP_SEQUENCE = [
+    "a",
+    "s",
+    "d",
+    "f",
+    "g",
+    "h",
+    "j",
+    "k",
+    "l",
     "1",
     "2",
     "3",
@@ -271,15 +280,6 @@ export const Categorize = () => {
     "8",
     "9",
     "0",
-    "a",
-    "s",
-    "d",
-    "f",
-    "g",
-    "h",
-    "j",
-    "k",
-    "l",
   ];
 
   const handleSelectionKey = (key: string) => {

@@ -5,7 +5,7 @@ import type { Json } from "../../server/api/task";
 
 export type ComparisonResult = "win" | "loss" | "draw" | "skip";
 
-export type SelectionStrategy = "random" | "uncertain" | "similar_scores" | "high_uncertainty" | "mixed_uncertainty" | "high_score_rest";
+export type SelectionStrategy = "random" | "uncertain" | "similar_scores";
 
 export const trackSubset = z.object({
   id: z.number(),
