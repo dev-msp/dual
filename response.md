@@ -1,8 +1,10 @@
-Perfect! I've successfully changed the keymap allocation priority. The `KEYMAP_SEQUENCE` array in `/Users/matt/code/lang/python/dual/src/pages/Categorize.tsx:262-283` now prioritizes letters (a-l) first, followed by digits (1-9, 0).
+Perfect! All tests are now passing. The issue was that Vitest was trying to run test files from the `.direnv` directory (a Nix/direnv cache directory) which contained references to Nix store paths that don't exist in your environment.
 
-**Summary of changes:**
-- Changed the priority order from: `1,2,3,4,5,6,7,8,9,0,a,s,d,f,g,h,j,k,l`
-- To: `a,s,d,f,g,h,j,k,l,1,2,3,4,5,6,7,8,9,0`
-- Updated the comment to reflect the new ordering
+## Summary
 
-This means that when keymaps are allocated to categorization options, the first option will now get 'a', the second will get 's', and so on through the homerow letters, before moving to digits starting with '1'.
+Fixed the failing tests by updating `vitest.config.ts:11-18` to exclude the `.direnv` directory from test discovery. The configuration now explicitly excludes common directories that shouldn't contain tests, including:
+- `.direnv` (Nix/direnv cache)
+- `node_modules`, `dist`, `cypress`
+- Various config files
+
+Result: All 9 test files with 165 tests now pass successfully.
